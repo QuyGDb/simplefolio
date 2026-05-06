@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script defer src="docs-viewer.js"></script>
   </head>
   <body class="docs-body">
     <header class="docs-header">
@@ -27,245 +28,402 @@
         <div class="docs-shell">
           <p class="docs-kicker">Cat Music Shop Documentation</p>
           <h1>Business Overview</h1>
-          <p>Original documentation content preserved from <code>overview.md</code>.</p>
+          <p>Rendered from inline markdown embedded in this page.</p>
         </div>
       </section>
 
       <section class="docs-source-section">
-        <div class="docs-shell">
-          <article class="markdown-document">
-            <pre># MusicShop — Business Documentation
+      <div class="docs-shell">
+        <div class="markdown-rendered">
+          <h1>MusicShop — Business Documentation</h1>
 
-&gt; Music Shop &#183; ASP.NET Core 10
+          <blockquote>
+            Music Shop · ASP.NET Core 10
+          </blockquote>
 
-MusicShop is an online platform for selling **Physical Media** (**Vinyl**, **CD**, **Cassette**). The **Admin** is the sole manager of the **Catalog**. The key differentiator is detailed **Catalog** management and specialized **Attributes** for different **Physical Media Formats**.
+          <p>MusicShop is an online platform for selling <strong>Physical Media</strong> (<strong>Vinyl</strong>, <strong>CD</strong>, <strong>Cassette</strong>). The <strong>Admin</strong> is the sole manager of the <strong>Catalog</strong>. The key differentiator is detailed <strong>Catalog</strong> management and specialized <strong>Attributes</strong> for different <strong>Physical Media Formats</strong>.</p>
 
-&gt; **Bold terms** mark entity-candidate keywords for ERD/domain modeling.
+          <blockquote>
+            <strong>Bold terms</strong> mark entity-candidate keywords for ERD/domain modeling.
+          </blockquote>
 
----
+          <hr>
 
-## Table of Contents
+          <h2>Table of Contents</h2>
+          <ul>
+            <li><a href="#0-feature-overview">0. Feature Overview</a></li>
+            <li><a href="#1-user-roles">1. User Roles</a></li>
+            <li><a href="#2-music-catalog">2. Music Catalog</a></li>
+            <li><a href="#3-products--sales">3. Products & Sales</a></li>
+            <li><a href="#4-order-process">4. Order Process</a></li>
+            <li><a href="#5-payments">5. Payments</a></li>
+            <li><a href="#6-notifications--business-events">6. Notifications & Business Events</a></li>
+          </ul>
 
-0. [Feature Overview](#0-feature-overview)
-1. [User Roles](#1-user-roles)
-2. [Music Catalog](#2-music-catalog)
-3. [Products &amp; Sales](#3-products--sales)
-4. [Order Process](#4-order-process)
-5. [Payments](#5-payments)
-6. [Notifications &amp; Business Events](#6-notifications--business-events)
+          <hr>
 
----
+          <h2 id="0-feature-overview">0. Feature Overview</h2>
 
-## 0. Feature Overview
+          <h3>0.1 Authentication & Accounts</h3>
+          <ul>
+            <li><strong>User</strong> registration (Local)</li>
+            <li>Login / logout (Local + Google Auth)</li>
+            <li><strong>Role</strong>-based access control (<strong>Guest</strong> / <strong>Customer</strong> / <strong>Admin</strong>)</li>
+          </ul>
 
-### 0.1 Authentication &amp; Accounts
+          <h3>0.2 Catalog & Products</h3>
+          <ul>
+            <li>Browse <strong>Products</strong>: general, random</li>
+            <li>Filter <strong>Products</strong> (<strong>Genre</strong>, <strong>Format</strong>: <strong>CD</strong>, <strong>Cassette</strong>, <strong>Vinyl</strong>, <strong>Artist</strong>, <strong>Country</strong>, <strong>Price</strong>, <strong>Decade</strong>)</li>
+            <li>Search <strong>Products</strong> (<strong>Album</strong>, <strong>Single</strong>, <strong>EP</strong>, <strong>Track</strong>, <strong>Genre</strong>, <strong>Format</strong>, <strong>Artist</strong>, <strong>Country</strong>)</li>
+            <li>View <strong>Product</strong> details (<strong>Artist</strong> info, <strong>Edition</strong>, <strong>Tracklist</strong>)</li>
+            <li>Browse <strong>Products</strong> by <strong>Curated Collections</strong></li>
+            <li><strong>Catalog</strong> management (<strong>Admin</strong>: add / edit / delete <strong>Artists</strong>, <strong>Products</strong>)</li>
+          </ul>
 
-- **User** registration (Local)
-- Login / logout (Local + Google Auth)
-- **Role**-based access control (**Guest** / **Customer** / **Admin**)
+          <h3>0.3 Shopping</h3>
+          <ul>
+            <li>Add <strong>Products</strong> to <strong>Cart</strong></li>
+            <li>Place <strong>Orders</strong></li>
+            <li>Choose <strong>Payment Method</strong> (<strong>Stripe</strong>)</li>
+            <li><strong>Pre-order</strong> items</li>
+            <li>Track <strong>Order Status</strong></li>
+            <li>Cancel <strong>Orders</strong> (<strong>Customer</strong>: only when <strong>Pending</strong> / <strong>Admin</strong>: from <strong>Confirmed</strong> onward)</li>
+            <li><strong>Review</strong> <strong>Products</strong> after <strong>Order</strong> completion</li>
+          </ul>
 
-### 0.2 Catalog &amp; Products
+          <h3>0.4 Payments</h3>
+          <ul>
+            <li>Online <strong>Payment</strong> via <strong>Stripe</strong> gateway</li>
+            <li><strong>Transaction</strong> history recording</li>
+          </ul>
 
-- Browse **Products**: general, random
-- Filter **Products** (**Genre**, **Format**: **CD**, **Cassette**, **Vinyl**, **Artist**, **Country**, **Price**, **Decade**)
-- Search **Products** (**Album**, **Single**, **EP**, **Track**, **Genre**, **Format**, **Artist**, **Country**)
-- View **Product** details (**Artist** info, **Edition**, **Tracklist**)
-- Browse **Products** by **Curated Collections**
-- **Catalog** management (**Admin**: add / edit / delete **Artists**, **Products**)
+          <h3>0.5 Order Management (Admin)</h3>
+          <ul>
+            <li>Confirm <strong>Orders</strong></li>
+            <li>Update <strong>Shipping Status</strong></li>
+            <li>Cancel <strong>Orders</strong></li>
+            <li>View <strong>Revenue Reports</strong></li>
+          </ul>
 
-### 0.3 Shopping
+          <h3>0.6 Notifications</h3>
+          <ul>
+            <li>Send <strong>Confirmation Email</strong> when an <strong>Order</strong> is placed</li>
+            <li>Send <strong>Status Email</strong> when an <strong>Order</strong> is confirmed</li>
+            <li>Send <strong>Shipping Email</strong> with <strong>Shipping Information</strong> when an <strong>Order</strong> is shipped</li>
+            <li>Send <strong>Review Invitation Email</strong> when an <strong>Order</strong> is completed</li>
+            <li>Send <strong>Cancellation Email</strong> when an <strong>Order</strong> is cancelled</li>
+          </ul>
 
-- Add **Products** to **Cart**
-- Place **Orders**
-- Choose **Payment Method** (**Stripe**)
-- **Pre-order** items
-- Track **Order Status**
-- Cancel **Orders** (**Customer**: only when **Pending** / **Admin**: from **Confirmed** onward)
-- **Review** **Products** after **Order** completion
+          <hr>
 
-### 0.4 Payments
+          <h2 id="1-user-roles">1. User Roles</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Description</th>
+                <th>Permissions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Guest</strong></td>
+                <td>Unauthenticated visitor</td>
+                <td>Browse catalog, search & filter products</td>
+              </tr>
+              <tr>
+                <td><strong>Customer</strong></td>
+                <td>Registered user (Email or Google)</td>
+                <td>Purchase items, track orders</td>
+              </tr>
+              <tr>
+                <td><strong>Admin</strong></td>
+                <td>Shop owner</td>
+                <td>Manage catalog, confirm / ship / cancel orders, view revenue reports, view action logs</td>
+              </tr>
+            </tbody>
+          </table>
 
-- Online **Payment** via **Stripe** gateway
-- **Transaction** history recording
+          <hr>
 
-### 0.5 Order Management (Admin)
+          <h2 id="2-music-catalog">2. Music Catalog</h2>
+          <p>The <strong>Music Catalog</strong> data store is completely separate from the buying/selling logic. This serves as the foundation for AI functionality and for accurate <strong>Product</strong> information management.</p>
 
-- Confirm **Orders**
-- Update **Shipping Status**
-- Cancel **Orders**
-- View **Revenue Reports**
+          <h3>2.1 Data Hierarchy</h3>
+          <pre><code>Artist  ──→  Original Release  ──→  Specific Edition  ──→  Tracklist</code></pre>
 
-### 0.6 Notifications
+          <table>
+            <thead>
+              <tr>
+                <th>Entity</th>
+                <th>Stored Information</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Artist</strong></td>
+                <td>Name, biography, genre, country</td>
+                <td>Pink Floyd, Miles Davis</td>
+              </tr>
+              <tr>
+                <td><strong>Original Release</strong></td>
+                <td>Album name, release year, genre, cover art</td>
+                <td>"Dark Side of the Moon" (1973)</td>
+              </tr>
+              <tr>
+                <td><strong>Specific Edition</strong></td>
+                <td>Pressing number, country, format, catalog number, record label</td>
+                <td>US first press, Japan obi 1976, 2011 Remaster</td>
+              </tr>
+              <tr>
+                <td><strong>Tracklist</strong></td>
+                <td>Position, track name, duration</td>
+                <td>Side A — Track 1: Speak to Me</td>
+              </tr>
+            </tbody>
+          </table>
 
-- Send **Confirmation Email** when an **Order** is placed
-- Send **Status Email** when an **Order** is confirmed
-- Send **Shipping Email** with **Shipping Information** when an **Order** is shipped
-- Send **Review Invitation Email** when an **Order** is completed
-- Send **Cancellation Email** when an **Order** is cancelled
+          <h3>2.2 Why Separate Original Release from Specific Edition</h3>
+          <p>A single original <strong>Album</strong> can have dozens of different <strong>Editions</strong>, each with its own <strong>Price</strong>, <strong>Condition</strong>, and <strong>Inventory</strong>. This hierarchy enables accurate management of each individual <strong>Pressing</strong> without duplicating <strong>Artist</strong> information.</p>
 
----
+          <h3>2.3 Record Labels</h3>
+          <p>Stores <strong>Record Label</strong> information linked to each specific <strong>Edition</strong>: <strong>Label Name</strong>, <strong>Country</strong>, <strong>Founding Year</strong>, <strong>Website</strong>.</p>
 
-## 1. User Roles
+          <hr>
 
-| Role | Description | Permissions |
-|---|---|---|
-| **Guest** | Unauthenticated visitor | Browse catalog, search &amp; filter products |
-| **Customer** | Registered user (Email or Google) | Purchase items, track orders |
-| **Admin** | Shop owner | Manage catalog, confirm / ship / cancel orders, view revenue reports, view action logs |
+          <h2 id="3-products--sales">3. Products & Sales</h2>
 
----
+          <h3>3.1 Product Types</h3>
+          <ul>
+            <li><strong>Vinyl</strong></li>
+            <li><strong>CD</strong></li>
+            <li><strong>Cassette</strong></li>
+          </ul>
 
-## 2. Music Catalog
+          <h3>3.2 Product Variants</h3>
+          <p>Each <strong>Product</strong> can have multiple <strong>Variants</strong>. Each <strong>Variant</strong> has its own independent <strong>Price</strong> and <strong>Inventory</strong>.</p>
 
-The **Music Catalog** data store is completely separate from the buying/selling logic. This serves as the foundation for AI functionality and for accurate **Product** information management.
+          <p><strong>Vinyl</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Disc color</td>
+                <td>Black, Colored, Splatter, Picture disc</td>
+              </tr>
+              <tr>
+                <td>Weight</td>
+                <td>140g (standard), 180g (audiophile)</td>
+              </tr>
+              <tr>
+                <td>Speed</td>
+                <td>33⅓ RPM, 45 RPM</td>
+              </tr>
+              <tr>
+                <td>Disc count</td>
+                <td>1LP, 2LP, Box set</td>
+              </tr>
+              <tr>
+                <td>Sleeve edition</td>
+                <td>Standard sleeve, Gatefold, Obi strip</td>
+              </tr>
+              <tr>
+                <td>Autograph</td>
+                <td>Signed by artist</td>
+              </tr>
+            </tbody>
+          </table>
 
-### 2.1 Data Hierarchy
+          <p><strong>CD</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Content</td>
+                <td>Standard, Deluxe / Expanded (bonus tracks), Box set</td>
+              </tr>
+              <tr>
+                <td>Regional edition</td>
+                <td>Japan edition (often includes exclusive bonus tracks)</td>
+              </tr>
+              <tr>
+                <td>Autograph</td>
+                <td>Signed by artist</td>
+              </tr>
+            </tbody>
+          </table>
 
-```
-Artist  ──→  Original Release  ──→  Specific Edition  ──→  Tracklist
-```
+          <p><strong>Cassette</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Tape color</td>
+                <td>Black, Clear, White, Colored</td>
+              </tr>
+              <tr>
+                <td>Edition</td>
+                <td>Standard, Limited edition</td>
+              </tr>
+              <tr>
+                <td>Autograph</td>
+                <td>Signed by artist</td>
+              </tr>
+            </tbody>
+          </table>
 
-| Entity | Stored Information | Examples |
-|---|---|---|
-| **Artist** | Name, biography, genre, country | Pink Floyd, Miles Davis |
-| **Original Release** | Album name, release year, genre, cover art | &quot;Dark Side of the Moon&quot; (1973) |
-| **Specific Edition** | Pressing number, country, format, catalog number, record label | US first press, Japan obi 1976, 2011 Remaster |
-| **Tracklist** | Position, track name, duration | Side A — Track 1: Speak to Me |
+          <h3>3.3 Special Features</h3>
+          <p><strong>Limited Edition</strong></p>
+          <ul>
+            <li>A fixed quantity is determined before sales begin.</li>
+            <li>The <strong>Limited Quantity</strong> may not be increased once <strong>Sales</strong> have started.</li>
+          </ul>
 
-### 2.2 Why Separate Original Release from Specific Edition
+          <p><strong>Pre-order</strong></p>
+          <ul>
+            <li><strong>Customers</strong> place <strong>Orders</strong> before the official <strong>Release Date</strong>.</li>
+            <li><strong>Inventory</strong> is not decremented until the actual <strong>Release Date arrives.</li>
+          </ul>
 
-A single original **Album** can have dozens of different **Editions**, each with its own **Price**, **Condition**, and **Inventory**. This hierarchy enables accurate management of each individual **Pressing** without duplicating **Artist** information.
+          <h3>3.4 Inventory Rules</h3>
+          <ul>
+            <li><strong>Out of Stock</strong> → automatically marked as unavailable for purchase, hidden from in-stock listings.</li>
+            <li><strong>Products</strong> cannot be deleted while there are <strong>Orders</strong> in <strong>Pending</strong> or <strong>Confirmed</strong> status.</li>
+            <li>When <strong>Stock</strong> is replenished → the system automatically notifies <strong>Customers</strong> who have that <strong>Product</strong> in their <strong>Wantlist</strong>.</li>
+          </ul>
 
-### 2.3 Record Labels
+          <h3>3.5 Curated Collections</h3>
+          <p>The <strong>Admin</strong> can create editorially themed <strong>Collections</strong>.</p>
+          <p>Examples: <em>Horror Soundtracks</em>, <em>Video Game OST</em>, <em>Vietnam New Wave</em>.</p>
 
-Stores **Record Label** information linked to each specific **Edition**: **Label Name**, **Country**, **Founding Year**, **Website**.
+          <hr>
 
----
-
-## 3. Products &amp; Sales
-
-### 3.1 Product Types
-
-- **Vinyl**
-- **CD**
-- **Cassette**
-
-### 3.2 Product Variants
-
-Each **Product** can have multiple **Variants**. Each **Variant** has its own independent **Price** and **Inventory**.
-
-**Vinyl**
-
-| Group | Examples |
-|---|---|
-| Disc color | Black, Colored, Splatter, Picture disc |
-| Weight | 140g (standard), 180g (audiophile) |
-| Speed | 33⅓ RPM, 45 RPM |
-| Disc count | 1LP, 2LP, Box set |
-| Sleeve edition | Standard sleeve, Gatefold, Obi strip |
-| Autograph | Signed by artist |
-
-**CD**
-
-| Group | Examples |
-|---|---|
-| Content | Standard, Deluxe / Expanded (bonus tracks), Box set |
-| Regional edition | Japan edition (often includes exclusive bonus tracks) |
-| Autograph | Signed by artist |
-
-**Cassette**
-
-| Group | Examples |
-|---|---|
-| Tape color | Black, Clear, White, Colored |
-| Edition | Standard, Limited edition |
-| Autograph | Signed by artist |
-
-### 3.3 Special Features
-
-**Limited Edition**
-
-- A fixed quantity is determined before sales begin.
-- The **Limited Quantity** may not be increased once **Sales** have started.
-
-**Pre-order**
-
-- **Customers** place **Orders** before the official **Release Date**.
-- **Inventory** is not decremented until the actual **Release Date** arrives.
-
-### 3.4 Inventory Rules
-
-- **Out of Stock** → automatically marked as unavailable for purchase, hidden from in-stock listings.
-- **Products** cannot be deleted while there are **Orders** in **Pending** or **Confirmed** status.
-- When **Stock** is replenished → the system automatically notifies **Customers** who have that **Product** in their **Wantlist**.
-
-### 3.5 Curated Collections
-
-The **Admin** can create editorially themed **Collections**.
-
-Examples: *Horror Soundtracks*, *Video Game OST*, *Vietnam New Wave*.
-
----
-
-## 4. Order Process
-
-### 4.1 Order Lifecycle
-
-```
-Pending → Confirmed → Shipped → Delivered → Completed
+          <h2 id="4-order-process">4. Order Process</h2>
+          <pre><code>Pending → Confirmed → Shipped → Delivered → Completed
              ↓
-          Cancelled (Admin only, from this state onward)
-```
+          Cancelled (Admin only, from this state onward)</code></pre>
 
-| Status | Description |
-|---|---|
-| **Pending** | **Customer** just placed the **Order**, awaiting confirmation |
-| **Confirmed** | **Admin** has confirmed the **Order** |
-| **Shipped** | **Order** has been dispatched |
-| **Delivered** | **Order** has reached the **Customer** |
-| **Completed** | Fully complete; **Customer** may leave a **Review** |
-| **Cancelled** | **Order** has been cancelled |
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Pending</strong></td>
+                <td><strong>Customer</strong> just placed the <strong>Order</strong>, awaiting confirmation</td>
+              </tr>
+              <tr>
+                <td><strong>Confirmed</strong></td>
+                <td><strong>Admin</strong> has confirmed the <strong>Order</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Shipped</strong></td>
+                <td><strong>Order</strong> has been dispatched</td>
+              </tr>
+              <tr>
+                <td><strong>Delivered</strong></td>
+                <td><strong>Order</strong> has reached the <strong>Customer</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Completed</strong></td>
+                <td>Fully complete; <strong>Customer</strong> may leave a <strong>Review</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Cancelled</strong></td>
+                <td><strong>Order</strong> has been cancelled</td>
+              </tr>
+            </tbody>
+          </table>
 
-### 4.2 Business Rules
+          <h3>4.2 Business Rules</h3>
+          <ul>
+            <li><strong>Checkout:</strong> <strong>Inventory</strong> is decremented immediately upon successful <strong>Order</strong> placement.</li>
+            <li><strong>Cancellation at Pending:</strong> full <strong>Inventory</strong> is restored to its previous level.</li>
+            <li><strong>Cancellation from Confirmed onward:</strong> only the <strong>Admin</strong> has the authority to do this.</li>
+            <li><strong>Each Order has exactly one Payment.</strong></li>
+          </ul>
 
-- **Checkout:** **Inventory** is decremented immediately upon successful **Order** placement.
-- **Cancellation at Pending:** full **Inventory** is restored to its previous level.
-- **Cancellation from Confirmed onward:** only the **Admin** has the authority to do this.
-- **Each Order has exactly one Payment.**
+          <hr>
 
----
+          <h2 id="5-payments">5. Payments</h2>
+          <h3>5.1 Payment Methods</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Stripe</strong></td>
+                <td>Online payment via Stripe gateway</td>
+              </tr>
+            </tbody>
+          </table>
 
-## 5. Payments
+          <h3>5.2 Recorded Information</h3>
+          <p>Each <strong>Payment Transaction</strong> stores: <strong>Amount</strong>, <strong>Payment Method</strong>, <strong>Transaction ID</strong>, <strong>Timestamp</strong>, and <strong>Status</strong>.</p>
 
-### 5.1 Payment Methods
+          <hr>
 
-| Method | Description |
-|---|---|
-| **Stripe** | Online payment via Stripe gateway |
+          <h2 id="6-notifications--business-events">6. Notifications & Business Events</h2>
+          <p><strong>Notifications</strong> are sent as application side effects; the current schema does not store <strong>Notification History</strong>.</p>
 
-### 5.2 Recorded Information
-
-Each **Payment Transaction** stores: **Amount**, **Payment Method**, **Transaction ID**, **Timestamp**, and **Status**.
-
----
-
-## 6. Notifications &amp; Business Events
-
-**Notifications** are sent as application side effects; the current schema does not store **Notification History**.
-
-### 6.1 Order Lifecycle Notifications
-
-| Event | Notification Action |
-|---|---|
-| **Order** placed | Send **Order Confirmation Email** to **Customer** |
-| **Order** confirmed | Send **Status Update Email** |
-| **Order** shipped | Send **Shipping Email** with **Shipping Information** |
-| **Order** completed | Send **Review Invitation Email** to **Customer** |
-| **Order** cancelled | Send **Cancellation Email** |
-</pre>
-          </article>
+          <h3>6.1 Order Lifecycle Notifications</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Notification Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Order</strong> placed</td>
+                <td>Send <strong>Order Confirmation Email</strong> to <strong>Customer</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Order</strong> confirmed</td>
+                <td>Send <strong>Status Update Email</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Order</strong> shipped</td>
+                <td>Send <strong>Shipping Email</strong> with <strong>Shipping Information</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Order</strong> completed</td>
+                <td>Send <strong>Review Invitation Email</strong> to <strong>Customer</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Order</strong> cancelled</td>
+                <td>Send <strong>Cancellation Email</strong></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </section>
+      </div>
+    </section>
     </main>
   </body>
 </html>

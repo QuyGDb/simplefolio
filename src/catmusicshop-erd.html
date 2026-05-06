@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script defer src="docs-viewer.js"></script>
   </head>
   <body class="docs-body">
     <header class="docs-header">
@@ -27,850 +28,943 @@
         <div class="docs-shell">
           <p class="docs-kicker">Cat Music Shop Documentation</p>
           <h1>ERD Analysis</h1>
-          <p>Original documentation content preserved from <code>erd-analysis-en.md</code>.</p>
+          <p>Entity decisions, table groups, relationships, and business rules.</p>
         </div>
       </section>
 
       <section class="docs-source-section">
         <div class="docs-shell">
-          <article class="markdown-document">
-            <pre># ERD Analysis — Vinyl Shop
+          <div class="markdown-rendered">
+            <h1>ERD Analysis — Vinyl Shop</h1>
 
-## General Conventions
+            <h2>General Conventions</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>PK</code></td>
+                  <td>Primary Key — Unique identifier for each row</td>
+                </tr>
+                <tr>
+                  <td><code>FK</code></td>
+                  <td>Foreign Key — Reference to another table</td>
+                </tr>
+                <tr>
+                  <td><code>uuid</code></td>
+                  <td>Universally Unique Identifier, safer than auto-incrementing integers</td>
+                </tr>
+                <tr>
+                  <td><code>enum</code></td>
+                  <td>Fixed set of values, e.g., <code>vinyl / cd / cassette</code></td>
+                </tr>
+                <tr>
+                  <td><code>unique</code></td>
+                  <td>Cannot be duplicated within the table</td>
+                </tr>
+                <tr>
+                  <td><code>nullable</code></td>
+                  <td>Allows empty values</td>
+                </tr>
+              </tbody>
+            </table>
 
-| Symbol | Meaning |
-|---|---|
-| `PK` | Primary Key — Unique identifier for each row |
-| `FK` | Foreign Key — Reference to another table |
-| `uuid` | Universally Unique Identifier, safer than auto-incrementing integers |
-| `enum` | Fixed set of values, e.g., `vinyl / cd / cassette` |
-| `unique` | Cannot be duplicated within the table |
-| `nullable` | Allows empty values |
+            <hr>
 
----
+            <h2>Candidate Entity Analysis from Overview</h2>
+            <p>Source: <code>docs/overview.md</code>. Bold terms in the overview are treated as entity-candidate keywords, then classified into tables, enums/value objects, query concepts, or side effects.</p>
 
-## Candidate Entity Analysis from Overview
+            <h3>Accepted Entity Candidates</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Overview candidate keyword</th>
+                  <th>ERD decision</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>User</strong>, <strong>Customer</strong>, <strong>Admin</strong></td>
+                  <td><code>users</code> table + <code>role</code> enum</td>
+                  <td>Customer/Admin are roles of a registered user, not separate tables.</td>
+                </tr>
+                <tr>
+                  <td><strong>Artist</strong></td>
+                  <td><code>artists</code> table</td>
+                  <td>Independently managed catalog entity with biography, country, image, and release relationships.</td>
+                </tr>
+                <tr>
+                  <td><strong>Genre</strong></td>
+                  <td><code>genres</code> table + junction tables</td>
+                  <td>Reused by many artists/releases; needs canonical names and slugs.</td>
+                </tr>
+                <tr>
+                  <td><strong>Album</strong>, <strong>Single</strong>, <strong>EP</strong>, <strong>Original Release</strong></td>
+                  <td><code>releases</code> table</td>
+                  <td>These are release types/semantic categories of the same catalog concept.</td>
+                </tr>
+                <tr>
+                  <td><strong>Edition</strong>, <strong>Pressing</strong>, <strong>Specific Edition</strong></td>
+                  <td><code>release_versions</code> table</td>
+                  <td>Physical releases can have many country/year/label/catalog-number variants.</td>
+                </tr>
+                <tr>
+                  <td><strong>Track</strong>, <strong>Tracklist</strong></td>
+                  <td><code>tracks</code> table</td>
+                  <td>Track ordering and duration belong to a release.</td>
+                </tr>
+                <tr>
+                  <td><strong>Record Label</strong>, <strong>Label</strong></td>
+                  <td><code>labels</code> table</td>
+                  <td>Label data is reused by many release versions.</td>
+                </tr>
+                <tr>
+                  <td><strong>Product</strong>, <strong>Physical Media</strong></td>
+                  <td><code>products</code> table</td>
+                  <td>Sellable SKU with price, stock, availability, preorder/limited flags.</td>
+                </tr>
+                <tr>
+                  <td><strong>Vinyl</strong>, <strong>CD</strong>, <strong>Cassette</strong>, <strong>Attributes</strong></td>
+                  <td><code>vinyl_attributes</code>, <code>cd_attributes</code>, <code>cassette_attributes</code></td>
+                  <td>Format-specific attributes differ enough to deserve separate structures.</td>
+                </tr>
+                <tr>
+                  <td><strong>Curated Collection</strong>, <strong>Collection</strong></td>
+                  <td><code>curated_collections</code>, <code>curated_collection_items</code></td>
+                  <td>Admin-managed product groupings with ordering.</td>
+                </tr>
+                <tr>
+                  <td><strong>Cart</strong></td>
+                  <td><code>carts</code>, <code>cart_items</code></td>
+                  <td>Customer shopping state with multiple products and quantities.</td>
+                </tr>
+                <tr>
+                  <td><strong>Order</strong></td>
+                  <td><code>orders</code>, <code>order_items</code></td>
+                  <td>Checkout creates a durable order snapshot and item snapshot.</td>
+                </tr>
+                <tr>
+                  <td><strong>Payment</strong>, <strong>Transaction</strong>, <strong>Stripe</strong></td>
+                  <td><code>payments</code> table</td>
+                  <td>Payment status and external transaction code must be stored for reconciliation.</td>
+                </tr>
+                <tr>
+                  <td><strong>Business Events</strong></td>
+                  <td><code>messages</code> table</td>
+                  <td>Reliable outbox/inbox processing is an infrastructure persistence concern.</td>
+                </tr>
+                <tr>
+                  <td><strong>Action Logs</strong></td>
+                  <td><code>admin_activity_logs</code> table</td>
+                  <td>Admin audit trail is stored separately from business entities.</td>
+                </tr>
+                <tr>
+                  <td><strong>Login / Logout</strong>, <strong>Google Auth</strong></td>
+                  <td><code>refresh_tokens</code> table</td>
+                  <td>Long-lived auth sessions require persisted hashed refresh tokens.</td>
+                </tr>
+              </tbody>
+            </table>
 
-Source: `docs/overview.md`. Bold terms in the overview are treated as entity-candidate keywords, then classified into tables, enums/value objects, query concepts, or side effects.
+            <p>Note: The detailed sections below focus on storefront/business ERD tables. Support tables such as <code>refresh_tokens</code>, <code>admin_activity_logs</code>, and <code>messages</code> are acknowledged here because the overview implies them, but they are not expanded in the core business ERD section.</p>
 
-### Accepted Entity Candidates
+            <h3>Non-Entity or Deferred Candidates</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Overview candidate keyword</th>
+                  <th>ERD decision</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Guest</strong></td>
+                  <td>No table</td>
+                  <td>Guest is an unauthenticated request state, not persisted.</td>
+                </tr>
+                <tr>
+                  <td><strong>Role</strong></td>
+                  <td>Enum/value</td>
+                  <td>Only fixed roles are needed: customer/admin. No role-management feature exists.</td>
+                </tr>
+                <tr>
+                  <td><strong>Format</strong>, <strong>Product Type</strong>, <strong>Payment Method</strong>, <strong>Order Status</strong>, <strong>Payment Status</strong></td>
+                  <td>Enum/value</td>
+                  <td>Closed value sets used for validation and branching.</td>
+                </tr>
+                <tr>
+                  <td><strong>Country</strong>, <strong>Price</strong>, <strong>Decade</strong>, <strong>Release Date</strong>, <strong>Stock</strong>, <strong>Inventory</strong></td>
+                  <td>Fields or derived filters</td>
+                  <td>These describe entities; they are not independent lifecycle objects in this system.</td>
+                </tr>
+                <tr>
+                  <td><strong>Catalog</strong>, <strong>Music Catalog</strong></td>
+                  <td>Module/bounded context</td>
+                  <td>Organizes related entities but does not become a table.</td>
+                </tr>
+                <tr>
+                  <td><strong>Revenue Reports</strong></td>
+                  <td>Query/report model</td>
+                  <td>Revenue is calculated from orders/payments; no separate report table is required.</td>
+                </tr>
+                <tr>
+                  <td><strong>Notifications</strong>, <strong>Emails</strong>, <strong>Notification History</strong></td>
+                  <td>Side effect, no table</td>
+                  <td>Current design sends email from application handlers and does not store notification logs.</td>
+                </tr>
+                <tr>
+                  <td><strong>Review</strong></td>
+                  <td>Deferred candidate</td>
+                  <td>Mentioned in overview, but no current review entity/table exists. Add only if product reviews become an implemented feature.</td>
+                </tr>
+                <tr>
+                  <td><strong>Wantlist</strong></td>
+                  <td>Removed/deferred candidate</td>
+                  <td>Mentioned in inventory rules, but current model has no wantlist table. Reintroduce only if back-in-stock notification becomes a feature.</td>
+                </tr>
+              </tbody>
+            </table>
 
-| Overview candidate keyword | ERD decision | Reason |
-|---|---|---|
-| **User**, **Customer**, **Admin** | `users` table + `role` enum | Customer/Admin are roles of a registered user, not separate tables. |
-| **Artist** | `artists` table | Independently managed catalog entity with biography, country, image, and release relationships. |
-| **Genre** | `genres` table + junction tables | Reused by many artists/releases; needs canonical names and slugs. |
-| **Album**, **Single**, **EP**, **Original Release** | `releases` table | These are release types/semantic categories of the same catalog concept. |
-| **Edition**, **Pressing**, **Specific Edition** | `release_versions` table | Physical releases can have many country/year/label/catalog-number variants. |
-| **Track**, **Tracklist** | `tracks` table | Track ordering and duration belong to a release. |
-| **Record Label**, **Label** | `labels` table | Label data is reused by many release versions. |
-| **Product**, **Physical Media** | `products` table | Sellable SKU with price, stock, availability, preorder/limited flags. |
-| **Vinyl**, **CD**, **Cassette**, **Attributes** | `vinyl_attributes`, `cd_attributes`, `cassette_attributes` | Format-specific attributes differ enough to deserve separate structures. |
-| **Curated Collection**, **Collection** | `curated_collections`, `curated_collection_items` | Admin-managed product groupings with ordering. |
-| **Cart** | `carts`, `cart_items` | Customer shopping state with multiple products and quantities. |
-| **Order** | `orders`, `order_items` | Checkout creates a durable order snapshot and item snapshot. |
-| **Payment**, **Transaction**, **Stripe** | `payments` table | Payment status and external transaction code must be stored for reconciliation. |
-| **Business Events** | `messages` table | Reliable outbox/inbox processing is an infrastructure persistence concern. |
-| **Action Logs** | `admin_activity_logs` table | Admin audit trail is stored separately from business entities. |
-| **Login / Logout**, **Google Auth** | `refresh_tokens` table | Long-lived auth sessions require persisted hashed refresh tokens. |
+            <hr>
 
-Note: The detailed sections below focus on storefront/business ERD tables. Support tables such as `refresh_tokens`, `admin_activity_logs`, and `messages` are acknowledged here because the overview implies them, but they are not expanded in the core business ERD section.
+            <h2>Section 1 — User Roles</h2>
+            <p><strong>Number of entities: 1</strong></p>
 
-### Non-Entity or Deferred Candidates
+            <h3><code>users</code> — Users</h3>
+            <p>Stores information for all registered users. Guests do not have a row in the DB — they exist at the session/request layer, not the data layer.</p>
 
-| Overview candidate keyword | ERD decision | Reason |
-|---|---|---|
-| **Guest** | No table | Guest is an unauthenticated request state, not persisted. |
-| **Role** | Enum/value | Only fixed roles are needed: customer/admin. No role-management feature exists. |
-| **Format**, **Product Type**, **Payment Method**, **Order Status**, **Payment Status** | Enum/value | Closed value sets used for validation and branching. |
-| **Country**, **Price**, **Decade**, **Release Date**, **Stock**, **Inventory** | Fields or derived filters | These describe entities; they are not independent lifecycle objects in this system. |
-| **Catalog**, **Music Catalog** | Module/bounded context | Organizes related entities but does not become a table. |
-| **Revenue Reports** | Query/report model | Revenue is calculated from orders/payments; no separate report table is required. |
-| **Notifications**, **Emails**, **Notification History** | Side effect, no table | Current design sends email from application handlers and does not store notification logs. |
-| **Review** | Deferred candidate | Mentioned in overview, but no current review entity/table exists. Add only if product reviews become an implemented feature. |
-| **Wantlist** | Removed/deferred candidate | Mentioned in inventory rules, but current model has no wantlist table. Reintroduce only if back-in-stock notification becomes a feature. |
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td></td></tr>
+                <tr><td><code>email</code></td><td>string</td><td>unique</td></tr>
+                <tr><td><code>password_hash</code></td><td>string</td><td>nullable (null if Google Login)</td></tr>
+                <tr><td><code>auth_provider</code></td><td>enum</td><td>local | google</td></tr>
+                <tr><td><code>provider_id</code></td><td>string</td><td>nullable (Google ID)</td></tr>
+                <tr><td><code>role</code></td><td>enum</td><td>customer | admin</td></tr>
+                <tr><td><code>created_at</code></td><td>timestamp</td><td></td></tr>
+              </tbody>
+            </table>
 
----
+            <p><strong>Field explanations:</strong></p>
+            <ul>
+              <li><code>auth_provider</code> defaults to <code>local</code>. If using Google, <code>password_hash</code> will be empty.</li>
+              <li><code>provider_id</code> stores the unique identifier from Google (subject) to avoid total dependence on email (which can change).</li>
+              <li><code>role</code> has only 2 values because Guests do not exist in the DB. A Guest's entire set of permissions is "no JWT" — handled at the API layer, not the schema.</li>
+              <li><code>password_hash</code> — stores the result of hashing (bcrypt/argon2), never plain text passwords. Even admins cannot read the actual password.</li>
+              <li>No separate <code>roles</code> or <code>permissions</code> tables are needed because the system has only 2 fixed roles with static permissions. Adding more tables would be over-engineering.</li>
+            </ul>
 
-## Section 1 — User Roles
+            <p><strong>Relationships with other tables:</strong></p>
+            <pre><code>users ──< orders
+users ──| carts (1-1)</code></pre>
 
-**Number of entities: 1**
+            <hr>
 
-### `users` — Users
+            <h2>Section 2 — Music Catalog</h2>
+            <p><strong>Number of entities: 6 + 2 junction tables = 8 tables</strong></p>
+            <p>The Catalog is a pure music database — completely separate from sales logic. It serves as the foundation for AI operations and accurate product information management.</p>
 
-Stores information for all registered users. Guests do not have a row in the DB — they exist at the session/request layer, not the data layer.
-
-```
-users
-─────────────────────────────────────────
-id            | uuid        PK
-name          | string
-email         | string      unique
-password_hash | string      nullable    -- null if using Google Login
-auth_provider | enum        -- local | google
-provider_id   | string      nullable    -- ID from Google (sub)
-role          | enum        -- customer | admin
-created_at    | timestamp
-```
-
-**Field explanations:**
-
-- `auth_provider` defaults to `local`. If using Google, `password_hash` will be empty.
-- `provider_id` stores the unique identifier from Google (subject) to avoid total dependence on email (which can change).
-- `role` has only 2 values because Guests do not exist in the DB. A Guest&#39;s entire set of permissions is &quot;no JWT&quot; — handled at the API layer, not the schema.
-- `password_hash` — stores the result of hashing (bcrypt/argon2), never plain text passwords. Even admins cannot read the actual password.
-- No separate `roles` or `permissions` tables are needed because the system has only 2 fixed roles with static permissions. Adding more tables would be over-engineering.
-
-**Relationships with other tables:**
-
-```
-users ──&lt; orders
-users ──| carts (1-1)
-```
-
----
-
-## Section 2 — Music Catalog
-
-**Number of entities: 6 + 2 junction tables = 8 tables**
-
-The Catalog is a pure music database — completely separate from sales logic. It serves as the foundation for AI operations and accurate product information management.
-
-Data hierarchy:
-
-```
-Artist → Release → ReleaseVersion → Product (Section 3)
+            <p>Data hierarchy:</p>
+            <pre><code>Artist → Release → ReleaseVersion → Product (Section 3)
                 └→ Track
 Label  → ReleaseVersion
 Genre  ↔ Artist (many-to-many)
-Genre  ↔ Release (many-to-many)
-```
+Genre  ↔ Release (many-to-many)</code></pre>
 
----
+            <hr>
 
-### `artists` — Artists
+            <h3><code>artists</code> — Artists</h3>
+            <p>Stores information about people/bands. An artist can have multiple albums and multiple genres.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>"Pink Floyd", "Miles Davis"</td></tr>
+                <tr><td><code>slug</code></td><td>string</td><td>"pink-floyd"</td></tr>
+                <tr><td><code>bio</code></td><td>text</td><td>nullable (long biography)</td></tr>
+                <tr><td><code>country</code></td><td>string</td><td>nullable ("UK", "US")</td></tr>
+                <tr><td><code>image_url</code></td><td>string</td><td>nullable (path to image)</td></tr>
+              </tbody>
+            </table>
 
-Stores information about people/bands. An artist can have multiple albums and multiple genres.
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>bio</code> uses the <code>text</code> type instead of <code>string</code> (varchar) because biographies can be very long and should not be limited in length.</li>
+              <li><code>image_url</code> stores the path to the image file (S3, CDN...). The DB does not store binary files because it increases DB size, slows down backups, and makes queries heavy.</li>
+              <li><code>country</code> is stored directly instead of being separated into a <code>countries</code> table because there is no business requirement to manage a list of countries — it is only used for filtering.</li>
+            </ul>
 
-```
-artists
-─────────────────────────────────────────
-id        | uuid     PK
-name      | string               -- &quot;Pink Floyd&quot;, &quot;Miles Davis&quot;
-slug      | string               -- &quot;pink-floyd&quot;
-bio       | text     nullable    -- long biography, using text instead of string
-country   | string   nullable    -- &quot;UK&quot;, &quot;US&quot; — used for product filtering
-image_url | string   nullable    -- stores path, doesn&#39;t store files in DB
-```
+            <hr>
 
-**Explanations:**
+            <h3><code>genres</code> — Music Genres</h3>
+            <p>Standardized list of music genres. Separated into its own table to avoid typos and for centralized management.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>unique ("Progressive Rock")</td></tr>
+                <tr><td><code>slug</code></td><td>string</td><td>unique ("progressive-rock")</td></tr>
+              </tbody>
+            </table>
 
-- `bio` uses the `text` type instead of `string` (varchar) because biographies can be very long and should not be limited in length.
-- `image_url` stores the path to the image file (S3, CDN...). The DB does not store binary files because it increases DB size, slows down backups, and makes queries heavy.
-- `country` is stored directly instead of being separated into a `countries` table because there is no business requirement to manage a list of countries — it is only used for filtering.
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>name</code> must be <code>unique</code> to prevent "Rock" and "rock" from coexisting.</li>
+              <li><code>slug</code> is a URL-safe version of the name — no spaces, no special characters. Used when filtering <code>/products?genre=progressive-rock</code>. The frontend does not need to encode spaces.</li>
+              <li>Reason for a separate table instead of storing directly in <code>artists</code>: if you store <code>genres = "Rock"</code> directly in <code>artists</code>, when you want to rename the genre or add a slug, you have to update all related rows. With a separate table, you only update 1 row in <code>genres</code>.</li>
+            </ul>
 
----
+            <hr>
 
-### `genres` — Music Genres
+            <h3><code>releases</code> — Original Releases</h3>
+            <p>Artistic information of an album/EP/single. This is the "original" — before considering where it was pressed, in what year, or by which label.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>artist_id</code></td><td>uuid</td><td>FK → artists.id</td></tr>
+                <tr><td><code>title</code></td><td>string</td><td>"Dark Side of the Moon"</td></tr>
+                <tr><td><code>slug</code></td><td>string</td><td>SEO / URL friendly</td></tr>
+                <tr><td><code>description</code></td><td>text</td><td>nullable</td></tr>
+                <tr><td><code>year</code></td><td>int</td><td>1973 (original release year)</td></tr>
+                <tr><td><code>cover_url</code></td><td>string</td><td>nullable (original cover)</td></tr>
+              </tbody>
+            </table>
 
-Standardized list of music genres. Separated into its own table to avoid typos and for centralized management.
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>year</code> is the original release year, not the repressing year. The repressing year is in <code>release_versions.pressing_year</code>.</li>
+              <li>Why separate <code>releases</code> from <code>release_versions</code>? An album can have dozens of repressings in many countries. If merged, artistic information (name, year, tracklist) would be repeated dozens of times. By separating them, artistic info is stored once, and pressing versions only store physical info.</li>
+            </ul>
 
-```
-genres
-─────────────────────────────────────────
-id   | uuid     PK
-name | string   unique    -- &quot;Progressive Rock&quot; — display name
-slug | string   unique    -- &quot;progressive-rock&quot; — used for URLs and filtering
-```
+            <hr>
 
-**Explanations:**
+            <h3><code>release_versions</code> — Specific Versions</h3>
+            <p>Each time an album is pressed, it is a separate <code>release_version</code>. This is the entity that links directly to <code>products</code>.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>release_id</code></td><td>uuid</td><td>FK → releases.id</td></tr>
+                <tr><td><code>label_id</code></td><td>uuid</td><td>FK → labels.id</td></tr>
+                <tr><td><code>pressing_country</code></td><td>string</td><td>nullable ("US", "Japan")</td></tr>
+                <tr><td><code>catalog_number</code></td><td>string</td><td>nullable ("SHVL 804")</td></tr>
+                <tr><td><code>pressing_year</code></td><td>int</td><td>nullable (1973, 1976, 2011)</td></tr>
+                <tr><td><code>format</code></td><td>enum</td><td>vinyl | cd | cassette</td></tr>
+                <tr><td><code>notes</code></td><td>text</td><td>nullable ("OBI strip")</td></tr>
+              </tbody>
+            </table>
 
-- `name` must be `unique` to prevent &quot;Rock&quot; and &quot;rock&quot; from coexisting.
-- `slug` is a URL-safe version of the name — no spaces, no special characters. Used when filtering `/products?genre=progressive-rock`. The frontend does not need to encode spaces.
-- Reason for a separate table instead of storing directly in `artists`: if you store `genres = &quot;Rock&quot;` directly in `artists`, when you want to rename the genre or add a slug, you have to update all related rows. With a separate table, you only update 1 row in `genres`.
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>catalog_number</code> is the identifier set by the label, used for lookup and authenticity verification. Important for collectors.</li>
+              <li><code>format</code> is here because format is an attribute of the pressing — Japan OBI 1976 defines it as Vinyl, not CD. This is the source of truth for format.</li>
+              <li><code>notes</code> uses free text instead of an enum because version characteristics are very diverse and hard to list exhaustively beforehand.</li>
+            </ul>
 
----
+            <p><strong>Real-world example — same release, 3 versions:</strong></p>
+            <table>
+              <thead>
+                <tr>
+                  <th>pressing_country</th>
+                  <th>pressing_year</th>
+                  <th>label</th>
+                  <th>notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>US</td>
+                  <td>1973</td>
+                  <td>Harvest</td>
+                  <td>First US pressing</td>
+                </tr>
+                <tr>
+                  <td>Japan</td>
+                  <td>1976</td>
+                  <td>Toshiba EMI</td>
+                  <td>OBI strip</td>
+                </tr>
+                <tr>
+                  <td>UK</td>
+                  <td>2011</td>
+                  <td>Parlophone</td>
+                  <td>2011 Remaster</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>Three rows in <code>release_versions</code>, only 1 row in <code>releases</code>.</p>
 
-### `releases` — Original Releases
+            <hr>
 
-Artistic information of an album/EP/single. This is the &quot;original&quot; — before considering where it was pressed, in what year, or by which label.
+            <h3><code>labels</code> — Record Labels</h3>
+            <p>The company that releases the record. A label can release many versions of many different albums.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>"Harvest Records"</td></tr>
+                <tr><td><code>country</code></td><td>string</td><td>"UK", "Japan"</td></tr>
+                <tr><td><code>founded_year</code></td><td>int</td><td>nullable</td></tr>
+                <tr><td><code>website</code></td><td>string</td><td>nullable</td></tr>
+              </tbody>
+            </table>
 
-```
-releases
-─────────────────────────────────────────
-id          | uuid     PK
-artist_id   | uuid     FK → artists.id
-title       | string               -- &quot;Dark Side of the Moon&quot;
-slug        | string               -- SEO / URL friendly
-description | text     nullable    -- General introduction to the album
-year        | int                  -- 1973 — original release year
-cover_url   | string   nullable    -- original cover art
-```
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li>Why is <code>labels</code> its own entity instead of storing the label name directly in <code>release_versions</code>? Because many <code>release_versions</code> share the same label. "Harvest Records" has released hundreds of albums. If storing the name directly, when you need to add info about the label (website, country), you have to update hundreds of rows. By separating it, you only update 1 row in <code>labels</code>.</li>
+            </ul>
 
-**Explanations:**
+            <hr>
 
-- `year` is the original release year, not the repressing year. The repressing year is in `release_versions.pressing_year`.
-- Why separate `releases` from `release_versions`? An album can have dozens of repressings in many countries. If merged, artistic information (name, year, tracklist) would be repeated dozens of times. By separating them, artistic info is stored once, and pressing versions only store physical info.
+            <h3><code>tracks</code> — Tracklist</h3>
+            <p>Tracklist of an album. Attached to <code>releases</code> — not to <code>release_versions</code> because different pressings still have the same original tracklist.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>release_id</code></td><td>uuid</td><td>FK → releases.id</td></tr>
+                <tr><td><code>position</code></td><td>int</td><td>1, 2, 3...</td></tr>
+                <tr><td><code>title</code></td><td>string</td><td>"Speak to Me"</td></tr>
+                <tr><td><code>duration_seconds</code></td><td>int</td><td>168</td></tr>
+                <tr><td><code>side</code></td><td>string</td><td>nullable ("A", "B")</td></tr>
+              </tbody>
+            </table>
 
----
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>duration_seconds</code> stores an integer instead of a string <code>"3:20"</code> because it's easier to calculate total album duration, sort, and filter. Displaying <code>"3:20"</code> is the frontend's job — <code>Math.floor(168/60) + ":" + (168%60)</code>.</li>
+              <li><code>side</code> is used for vinyl with Side A and Side B. Tracks 1-6 on Side A, tracks 7-12 on Side B. For CDs and cassettes, <code>side = null</code>.</li>
+              <li>Why attach to <code>releases</code> instead of <code>release_versions</code>? Because the tracklist is artistic info and does not change with the pressing. Japan OBI 1976 and US First Press 1973 have the same tracklist.</li>
+            </ul>
 
-### `release_versions` — Specific Versions
+            <hr>
 
-Each time an album is pressed, it is a separate `release_version`. This is the entity that links directly to `products`.
+            <h3>Junction table: <code>artist_genres</code></h3>
+            <p>Links <code>artists</code> and <code>genres</code> in a many-to-many relationship. One artist has many genres, and one genre has many artists.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>artist_id</code></td><td>uuid</td><td>FK → artists.id</td></tr>
+                <tr><td><code>genre_id</code></td><td>uuid</td><td>FK → genres.id</td></tr>
+              </tbody>
+            </table>
 
-```
-release_versions
-─────────────────────────────────────────
-id               | uuid     PK
-release_id       | uuid     FK → releases.id
-label_id         | uuid     FK → labels.id
-pressing_country | string   nullable    -- &quot;US&quot;, &quot;Japan&quot;, &quot;UK&quot;
-catalog_number   | string   nullable    -- &quot;SHVL 804&quot; — label&#39;s catalog code
-pressing_year    | int      nullable    -- 1973, 1976, 2011
-format           | enum                 -- vinyl | cd | cassette
-notes            | text     nullable    -- &quot;First UK pressing&quot;, &quot;OBI strip&quot;
-```
+            <hr>
 
-**Explanations:**
+            <h3>Junction table: <code>release_genres</code></h3>
+            <p>Links <code>releases</code> and <code>genres</code>. Separate from <code>artist_genres</code> because a release can sometimes belong to a different genre than the artist.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>release_id</code></td><td>uuid</td><td>FK → releases.id</td></tr>
+                <tr><td><code>genre_id</code></td><td>uuid</td><td>FK → genres.id</td></tr>
+              </tbody>
+            </table>
 
-- `catalog_number` is the identifier set by the label, used for lookup and authenticity verification. Important for collectors.
-- `format` is here because format is an attribute of the pressing — Japan OBI 1976 defines it as Vinyl, not CD. This is the source of truth for format.
-- `notes` uses free text instead of an enum because version characteristics are very diverse and hard to list exhaustively beforehand.
+            <p><strong>Why separate from <code>artist_genres</code>?</strong></p>
+            <p>Miles Davis is Jazz, but the album <em>Bitches Brew</em> is Jazz Fusion — a specific genre for that release that doesn't represent the entire artist. If merged, it would be impossible to distinguish "artist's genre" from "this specific album's genre".</p>
 
-**Real-world example — same release, 3 versions:**
+            <hr>
 
-| pressing_country | pressing_year | label | notes |
-|---|---|---|---|
-| US | 1973 | Harvest | First US pressing |
-| Japan | 1976 | Toshiba EMI | OBI strip |
-| UK | 2011 | Parlophone | 2011 Remaster |
-
-Three rows in `release_versions`, only 1 row in `releases`.
-
----
-
-### `labels` — Record Labels
-
-The company that releases the record. A label can release many versions of many different albums.
-
-```
-labels
-─────────────────────────────────────────
-id           | uuid     PK
-name         | string               -- &quot;Harvest Records&quot;, &quot;Toshiba EMI&quot;
-country      | string               -- &quot;UK&quot;, &quot;Japan&quot;
-founded_year | int      nullable
-website      | string   nullable
-```
-
-**Explanations:**
-
-- Why is `labels` its own entity instead of storing the label name directly in `release_versions`? Because many `release_versions` share the same label. &quot;Harvest Records&quot; has released hundreds of albums. If storing the name directly, when you need to add info about the label (website, country), you have to update hundreds of rows. By separating it, you only update 1 row in `labels`.
-
----
-
-### `tracks` — Tracklist
-
-Tracklist of an album. Attached to `releases` — not to `release_versions` because different pressings still have the same original tracklist.
-
-```
-tracks
-─────────────────────────────────────────
-id               | uuid     PK
-release_id       | uuid     FK → releases.id
-position         | int                  -- track order: 1, 2, 3...
-title            | string               -- &quot;Speak to Me&quot;, &quot;Breathe&quot;
-duration_seconds | int                  -- 168
-side             | string   nullable    -- &quot;A&quot;, &quot;B&quot; — for vinyl
-```
-
-**Explanations:**
-
-- `duration_seconds` stores an integer instead of a string `&quot;3:20&quot;` because it&#39;s easier to calculate total album duration, sort, and filter. Displaying `&quot;3:20&quot;` is the frontend&#39;s job — `Math.floor(168/60) + &quot;:&quot; + (168%60)`.
-- `side` is used for vinyl with Side A and Side B. Tracks 1-6 on Side A, tracks 7-12 on Side B. For CDs and cassettes, `side = null`.
-- Why attach to `releases` instead of `release_versions`? Because the tracklist is artistic info and does not change with the pressing. Japan OBI 1976 and US First Press 1973 have the same tracklist.
-
----
-
-### Junction table: `artist_genres`
-
-Links `artists` and `genres` in a many-to-many relationship. One artist has many genres, and one genre has many artists.
-
-```
-artist_genres
-─────────────────────────────────────────
-artist_id | uuid     FK → artists.id
-genre_id  | uuid     FK → genres.id
-─────────────────────────────────────────
-PRIMARY KEY (artist_id, genre_id)         -- composite key, no separate id needed
-```
-
----
-
-### Junction table: `release_genres`
-
-Links `releases` and `genres`. Separate from `artist_genres` because a release can sometimes belong to a different genre than the artist.
-
-```
-release_genres
-─────────────────────────────────────────
-release_id | uuid     FK → releases.id
-genre_id   | uuid     FK → genres.id
-─────────────────────────────────────────
-PRIMARY KEY (release_id, genre_id)
-```
-
-**Why separate from `artist_genres`?**
-
-Miles Davis is Jazz, but the album *Bitches Brew* is Jazz Fusion — a specific genre for that release that doesn&#39;t represent the entire artist. If merged, it would be impossible to distinguish &quot;artist&#39;s genre&quot; from &quot;this specific album&#39;s genre&quot;.
-
----
-
-## Section 3 — Products &amp; Sales
-
-**Number of entities: 7 (including 1 junction table + 3 attribute tables)**
-
-This section is the bridge between the music catalog and the sales system.
-
-```
-release_versions → products
+            <h2>Section 3 — Products & Sales</h2>
+            <p><strong>Number of entities: 7 (including 1 junction table + 3 attribute tables)</strong></p>
+            <p>This section is the bridge between the music catalog and the sales system.</p>
+            <pre><code>release_versions → products
                         ↑
-              (Price and stock live here)
-```
+              (Price and stock live here)</code></pre>
 
----
+            <hr>
 
-### `products` — Products
+            <h3><code>products</code> — Products</h3>
+            <p>A <code>product</code> represents a <code>release_version</code> that the shop is selling. Currently, each Product is an independent SKU.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>release_version_id</code></td><td>uuid</td><td>FK → release_versions.id</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>"Pink Floyd — The Dark Side..."</td></tr>
+                <tr><td><code>slug</code></td><td>string</td><td>SEO / URL friendly</td></tr>
+                <tr><td><code>cover_url</code></td><td>string</td><td>nullable (product image)</td></tr>
+                <tr><td><code>description</code></td><td>text</td><td>nullable</td></tr>
+                <tr><td><code>price</code></td><td>decimal</td><td>sale price</td></tr>
+                <tr><td><code>stock_qty</code></td><td>int</td><td>default 0</td></tr>
+                <tr><td><code>is_available</code></td><td>boolean</td><td>default true</td></tr>
+                <tr><td><code>is_signed</code></td><td>boolean</td><td>default false</td></tr>
+                <tr><td><code>is_limited</code></td><td>boolean</td><td>default false</td></tr>
+                <tr><td><code>limited_qty</code></td><td>int</td><td>nullable</td></tr>
+                <tr><td><code>is_preorder</code></td><td>boolean</td><td>default false</td></tr>
+                <tr><td><code>preorder_release_date</code></td><td>date</td><td>nullable</td></tr>
+                <tr><td><code>is_active</code></td><td>boolean</td><td>default true</td></tr>
+                <tr><td><code>created_at</code></td><td>timestamp</td><td></td></tr>
+              </tbody>
+            </table>
 
-A `product` represents a `release_version` that the shop is selling. Currently, each Product is an independent SKU.
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>price</code> and <code>stock_qty</code> are now stored directly in <code>products</code>. The system has removed the Variant layer to simplify SKU management.</li>
+              <li><code>Format</code> is no longer in the <code>products</code> table. This information is retrieved directly from <code>release_versions.format</code> to ensure data consistency (Single Source of Truth).</li>
+              <li>Specific attributes for each format (disc color, weight...) are separated into 3 extension tables (<code>vinyl_attributes</code>, <code>cd_attributes</code>, <code>cassette_attributes</code>) and linked directly to <code>product_id</code>.</li>
+              <li><code>is_active = false</code> is used when hiding a product instead of deleting it — products should not be deleted when there are Pending/Confirmed orders.</li>
+            </ul>
 
-```
-products
-─────────────────────────────────────────
-id                   | uuid     PK
-release_version_id   | uuid     FK → release_versions.id
-name                 | string               -- display name in shop
-slug                 | string               -- SEO / URL friendly
-cover_url            | string   nullable    -- original product image
-description          | text     nullable
-price                | decimal              -- sale price
-stock_qty            | int      default 0   -- stock quantity
-is_available         | boolean  default true-- sales status
-is_signed            | boolean  default false-- signed copy or not
-is_limited           | boolean  default false
-limited_qty          | int      nullable
-is_preorder          | boolean  default false
-preorder_release_date| date     nullable
-is_active            | boolean  default true-- hide/show product
-created_at           | timestamp
-```
-
-**Explanations:**
-
-- `price` and `stock_qty` are now stored directly in `products`. The system has removed the Variant layer to simplify SKU management.
-- `Format` is no longer in the `products` table. This information is retrieved directly from `release_versions.format` to ensure data consistency (Single Source of Truth).
-- Specific attributes for each format (disc color, weight...) are separated into 3 extension tables (`vinyl_attributes`, `cd_attributes`, `cassette_attributes`) and linked directly to `product_id`.
-- `is_active = false` is used when hiding a product instead of deleting it — products should not be deleted when there are Pending/Confirmed orders.
-
----
-
-**Relationship with extension tables (1-1):**
-
-```
-products ──| vinyl_attributes
+            <p><strong>Relationship with extension tables (1-1):</strong></p>
+            <pre><code>products ──| vinyl_attributes
 products ──| cd_attributes
-products ──| cassette_attributes
-```
+products ──| cassette_attributes</code></pre>
+            <p>A product belongs to exactly 1 format, so only 1 corresponding extension table exists.</p>
 
-A product belongs to exactly 1 format, so only 1 corresponding extension table exists.
+            <hr>
 
----
+            <h3><code>vinyl_attributes</code> — Vinyl Attributes</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>product_id</code></td><td>uuid</td><td>FK → products.id (unique)</td></tr>
+                <tr><td><code>disc_color</code></td><td>enum</td><td>black | colored | splatter...</td></tr>
+                <tr><td><code>weight_grams</code></td><td>enum</td><td>140 | 180</td></tr>
+                <tr><td><code>speed_rpm</code></td><td>enum</td><td>33 | 45</td></tr>
+                <tr><td><code>disc_count</code></td><td>enum</td><td>1lp | 2lp | box_set</td></tr>
+                <tr><td><code>sleeve_type</code></td><td>enum</td><td>standard | gatefold | obi_strip</td></tr>
+              </tbody>
+            </table>
 
-### `vinyl_attributes` — Vinyl Attributes
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>unique</code> on <code>product_id</code> enforces a 1-1 relationship — a product cannot have 2 vinyl_attributes rows.</li>
+              <li>All use <code>enum</code> instead of free <code>string</code> so the DB rejects invalid values. You cannot store <code>weight_grams = "180g"</code> (string) or <code>speed_rpm = 78</code> (invalid).</li>
+              <li><code>disc_count</code> distinguishes between 1LP, 2LP, Box set.</li>
+            </ul>
 
-```
-vinyl_attributes
-─────────────────────────────────────────
-id                 | uuid   PK
-product_id         | uuid   FK → products.id   unique
-disc_color         | enum   -- black | colored | splatter | picture_disc
-weight_grams       | enum   -- 140 | 180
-speed_rpm          | enum   -- 33 | 45
-disc_count         | enum   -- 1lp | 2lp | box_set
-sleeve_type        | enum   -- standard | gatefold | obi_strip
-```
+            <hr>
 
-**Explanations:**
+            <h3><code>cd_attributes</code> — CD Attributes</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>product_id</code></td><td>uuid</td><td>FK → products.id (unique)</td></tr>
+                <tr><td><code>edition</code></td><td>enum</td><td>standard | deluxe | box_set</td></tr>
+                <tr><td><code>is_japan_edition</code></td><td>boolean</td><td>default false</td></tr>
+              </tbody>
+            </table>
 
-- `unique` on `product_id` enforces a 1-1 relationship — a product cannot have 2 vinyl_attributes rows.
-- All use `enum` instead of free `string` so the DB rejects invalid values. You cannot store `weight_grams = &quot;180g&quot;` (string) or `speed_rpm = 78` (invalid).
-- `disc_count` distinguishes between 1LP, 2LP, Box set.
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>edition</code> distinguishes between Standard (original tracklist) and Deluxe/Expanded (with bonus tracks).</li>
+              <li><code>is_japan_edition</code> is a separate boolean because Japan editions are a specific concept in the music market — often featuring exclusive bonus tracks, OBI strips, higher prices, and are specifically sought after by collectors.</li>
+            </ul>
 
----
+            <hr>
 
-### `cd_attributes` — CD Attributes
+            <h3><code>cassette_attributes</code> — Cassette Attributes</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>product_id</code></td><td>uuid</td><td>FK → products.id (unique)</td></tr>
+                <tr><td><code>tape_color</code></td><td>enum</td><td>black | clear | white | colored</td></tr>
+                <tr><td><code>edition</code></td><td>enum</td><td>standard | limited</td></tr>
+              </tbody>
+            </table>
 
-```
-cd_attributes
-─────────────────────────────────────────
-id                 | uuid    PK
-product_id         | uuid    FK → products.id   unique
-edition            | enum    -- standard | deluxe | box_set
-is_japan_edition   | boolean default false
-```
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>tape_color</code> is an important visual attribute for cassette collectors — tape color directly affects price and rarity.</li>
+              <li><code>edition = limited</code> combined with <code>products.is_limited</code> for a double-check: <code>is_limited</code> is a business rule (selling limit), <code>edition</code> is the manufacturer's marketing info.</li>
+            </ul>
 
-**Explanations:**
+            <hr>
 
-- `edition` distinguishes between Standard (original tracklist) and Deluxe/Expanded (with bonus tracks).
-- `is_japan_edition` is a separate boolean because Japan editions are a specific concept in the music market — often featuring exclusive bonus tracks, OBI strips, higher prices, and are specifically sought after by collectors.
+            <h3><code>curated_collections</code> — Themed Collections</h3>
+            <p>Admins create editorial collections to group products by theme. E.g., <em>Horror Soundtracks</em>, <em>Vietnam New Wave</em>.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>created_by</code></td><td>uuid</td><td>FK → users.id (admin)</td></tr>
+                <tr><td><code>title</code></td><td>string</td><td>"Horror Soundtracks"</td></tr>
+                <tr><td><code>description</code></td><td>text</td><td>nullable</td></tr>
+                <tr><td><code>is_published</code></td><td>boolean</td><td>default false</td></tr>
+                <tr><td><code>created_at</code></td><td>timestamp</td><td></td></tr>
+              </tbody>
+            </table>
 
----
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>is_published</code> allows admins to prepare a collection and publish it when ready, rather than displaying it immediately upon creation.</li>
+              <li><code>created_by</code> tracks which admin created it, used for audit logs.</li>
+            </ul>
 
-### `cassette_attributes` — Cassette Attributes
+            <hr>
 
-```
-cassette_attributes
-─────────────────────────────────────────
-id                 | uuid   PK
-product_id         | uuid   FK → products.id   unique
-tape_color         | enum   -- black | clear | white | colored
-edition            | enum   -- standard | limited
-```
+            <h3>Junction table: <code>curated_collection_items</code></h3>
+            <p>Links <code>curated_collections</code> and <code>products</code>. A collection has many products, and a product can appear in many collections.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>collection_id</code></td><td>uuid</td><td>FK → curated_collections.id</td></tr>
+                <tr><td><code>product_id</code></td><td>uuid</td><td>FK → products.id</td></tr>
+                <tr><td><code>sort_order</code></td><td>int</td><td>display order</td></tr>
+              </tbody>
+            </table>
 
-**Explanations:**
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li>Uses a separate <code>id</code> instead of a composite key because there is an additional <code>sort_order</code> — a composite key cannot describe order.</li>
+              <li><code>sort_order</code> allows admins to arrange products in a collection as desired, independent of insertion order.</li>
+            </ul>
 
-- `tape_color` is an important visual attribute for cassette collectors — tape color directly affects price and rarity.
-- `edition = limited` combined with `products.is_limited` for a double-check: `is_limited` is a business rule (selling limit), `edition` is the manufacturer&#39;s marketing info.
+            <hr>
 
----
-
-### `curated_collections` — Themed Collections
-
-Admins create editorial collections to group products by theme. E.g., *Horror Soundtracks*, *Vietnam New Wave*.
-
-```
-curated_collections
-─────────────────────────────────────────
-id           | uuid     PK
-created_by   | uuid     FK → users.id    -- must be an admin
-title        | string                    -- &quot;Horror Soundtracks&quot;
-description  | text     nullable
-is_published | boolean  default false    -- draft before publishing
-created_at   | timestamp
-```
-
-**Explanations:**
-
-- `is_published` allows admins to prepare a collection and publish it when ready, rather than displaying it immediately upon creation.
-- `created_by` tracks which admin created it, used for audit logs.
-
----
-
-### Junction table: `curated_collection_items`
-
-Links `curated_collections` and `products`. A collection has many products, and a product can appear in many collections.
-
-```
-curated_collection_items
-─────────────────────────────────────────
-id            | uuid     PK
-collection_id | uuid     FK → curated_collections.id
-product_id    | uuid     FK → products.id
-sort_order    | int                  -- display order in collection
-```
-
-**Explanations:**
-
-- Uses a separate `id` instead of a composite key because there is an additional `sort_order` — a composite key cannot describe order.
-- `sort_order` allows admins to arrange products in a collection as desired, independent of insertion order.
-
----
-
-## Section 4 — Order Process
-
-**Number of entities: 5**
-
-Order Lifecycle:
-
-```
-Pending → Confirmed → Shipped → Delivered → Completed
+            <h2>Section 4 — Order Process</h2>
+            <p><strong>Number of entities: 5</strong></p>
+            <p>Order Lifecycle:</p>
+            <pre><code>Pending → Confirmed → Shipped → Delivered → Completed
              ↓
-          Cancelled
-```
+          Cancelled</code></pre>
 
----
+            <hr>
 
-### `carts` — Shopping Carts
+            <h3><code>carts</code> — Shopping Carts</h3>
+            <p>Each customer has exactly 1 shopping cart. The cart is persistent (not lost when closing the tab).</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>user_id</code></td><td>uuid</td><td>FK → users.id (unique)</td></tr>
+                <tr><td><code>updated_at</code></td><td>timestamp</td><td></td></tr>
+              </tbody>
+            </table>
 
-Each customer has exactly 1 shopping cart. The cart is persistent (not lost when closing the tab).
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>user_id</code> has a <code>unique</code> constraint to ensure a user has exactly 1 cart.</li>
+              <li><code>total</code> is not stored in <code>carts</code> because the total amount is always calculated dynamically from <code>cart_items</code> — avoiding data discrepancy when prices change.</li>
+              <li>Guests do not have a cart in the DB — if needed, store temporarily in localStorage on the frontend.</li>
+            </ul>
 
-```
-carts
-─────────────────────────────────────────
-id         | uuid     PK
-user_id    | uuid     FK → users.id    unique    -- 1 user only has 1 cart
-updated_at | timestamp
-```
+            <hr>
 
-**Explanations:**
+            <h3><code>cart_items</code> — Cart Items</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>cart_id</code></td><td>uuid</td><td>FK → carts.id</td></tr>
+                <tr><td><code>product_id</code></td><td>uuid</td><td>FK → products.id</td></tr>
+                <tr><td><code>quantity</code></td><td>int</td><td>default 1</td></tr>
+              </tbody>
+            </table>
 
-- `user_id` has a `unique` constraint to ensure a user has exactly 1 cart.
-- `total` is not stored in `carts` because the total amount is always calculated dynamically from `cart_items` — avoiding data discrepancy when prices change.
-- Guests do not have a cart in the DB — if needed, store temporarily in localStorage on the frontend.
+            <hr>
 
----
+            <h3><code>orders</code> — Orders</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>user_id</code></td><td>uuid</td><td>FK → users.id</td></tr>
+                <tr><td><code>status</code></td><td>enum</td><td>pending | confirmed | shipped...</td></tr>
+                <tr><td><code>shipping_address</code></td><td>string</td><td>snapshot</td></tr>
+                <tr><td><code>recipient_name</code></td><td>string</td><td>snapshot</td></tr>
+                <tr><td><code>phone</code></td><td>string</td><td>snapshot</td></tr>
+                <tr><td><code>note</code></td><td>text</td><td>nullable</td></tr>
+                <tr><td><code>total_amount</code></td><td>decimal</td><td>snapshot</td></tr>
+                <tr><td><code>tracking_number</code></td><td>string</td><td>nullable</td></tr>
+                <tr><td><code>cancelled_by</code></td><td>uuid</td><td>nullable (FK → users.id)</td></tr>
+                <tr><td><code>cancel_reason</code></td><td>text</td><td>nullable</td></tr>
+                <tr><td><code>created_at</code></td><td>timestamp</td><td></td></tr>
+                <tr><td><code>updated_at</code></td><td>timestamp</td><td></td></tr>
+              </tbody>
+            </table>
 
-### `cart_items` — Cart Items
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>shipping_address</code>, <code>recipient_name</code>, <code>phone</code> are snapshots — copied from the user profile at the time of order. If the user changes their address later, old orders are not affected.</li>
+              <li><code>total_amount</code> is also a snapshot — the total at the time of ordering. It is not recalculated from <code>order_items</code> later because prices may have changed.</li>
+              <li><code>cancelled_by</code> records who cancelled — customer or admin — for audit logs and reporting.</li>
+              <li><code>tracking_number</code> only has a value after the order moves to the <code>shipped</code> status.</li>
+            </ul>
 
-```
-cart_items
-─────────────────────────────────────────
-id                 | uuid     PK
-cart_id            | uuid     FK → carts.id
-product_id         | uuid     FK → products.id
-quantity           | int      default 1
-```
+            <p><strong>Cancellation Rules:</strong></p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Customer</th>
+                  <th>Admin</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Pending</td>
+                  <td>Allowed</td>
+                  <td>Allowed</td>
+                </tr>
+                <tr>
+                  <td>Confirmed onwards</td>
+                  <td>Not Allowed</td>
+                  <td>Allowed</td>
+                </tr>
+              </tbody>
+            </table>
 
----
+            <hr>
 
-### `orders` — Orders
+            <h3><code>order_items</code> — Order Details</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>order_id</code></td><td>uuid</td><td>FK → orders.id</td></tr>
+                <tr><td><code>product_id</code></td><td>uuid</td><td>FK → products.id</td></tr>
+                <tr><td><code>quantity</code></td><td>int</td><td></td></tr>
+                <tr><td><code>unit_price</code></td><td>decimal</td><td>snapshot</td></tr>
+              </tbody>
+            </table>
 
-```
-orders
-─────────────────────────────────────────
-id               | uuid     PK
-user_id          | uuid     FK → users.id
-status           | enum               -- pending | confirmed | shipped | delivered | completed | cancelled
-shipping_address | string             -- shipping address (snapshot at time of order)
-recipient_name   | string             -- recipient name (snapshot)
-phone            | string             -- phone number (snapshot)
-note             | text    nullable   -- customer note when ordering
-total_amount     | decimal            -- total amount (snapshot at time of order)
-tracking_number  | string  nullable   -- tracking code, available after shipping
-cancelled_by     | uuid    nullable   FK → users.id   -- who cancelled the order
-cancel_reason    | text    nullable
-created_at       | timestamp
-updated_at       | timestamp
-```
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>unit_price</code> is a snapshot of the price at the time of ordering.</li>
+              <li><code>product_id</code> holds an FK to look up product info (name, image) when displaying order history.</li>
+            </ul>
 
-**Explanations:**
+            <hr>
 
-- `shipping_address`, `recipient_name`, `phone` are snapshots — copied from the user profile at the time of order. If the user changes their address later, old orders are not affected.
-- `total_amount` is also a snapshot — the total at the time of ordering. It is not recalculated from `order_items` later because prices may have changed.
-- `cancelled_by` records who cancelled — customer or admin — for audit logs and reporting.
-- `tracking_number` only has a value after the order moves to the `shipped` status.
+            <h2>Section 5 — Payments</h2>
+            <p><strong>Number of entities: 1</strong></p>
 
-**Cancellation Rules:**
+            <h3><code>payments</code> — Payments</h3>
+            <p>Each order has exactly 1 payment (1-1 relationship with <code>orders</code>).</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>id</code></td><td>uuid</td><td>PK</td></tr>
+                <tr><td><code>order_id</code></td><td>uuid</td><td>FK → orders.id (unique)</td></tr>
+                <tr><td><code>method</code></td><td>enum</td><td>stripe</td></tr>
+                <tr><td><code>amount</code></td><td>decimal</td><td>payment amount</td></tr>
+                <tr><td><code>transaction_code</code></td><td>string</td><td>nullable (Stripe ID)</td></tr>
+                <tr><td><code>status</code></td><td>enum</td><td>pending | success | failed</td></tr>
+                <tr><td><code>paid_at</code></td><td>timestamp</td><td>nullable</td></tr>
+              </tbody>
+            </table>
 
-| Status | Customer | Admin |
-|---|---|---|
-| Pending | Allowed | Allowed |
-| Confirmed onwards | Not Allowed | Allowed |
+            <p><strong>Explanations:</strong></p>
+            <ul>
+              <li><code>order_id unique</code> enforces a 1-1 relationship — 1 order cannot have 2 payment records.</li>
+              <li><code>transaction_code</code> is the PaymentIntent ID or Session ID from Stripe.</li>
+              <li><code>paid_at</code> is the time the webhook receives the Stripe success notification.</li>
+              <li><code>status = pending</code> until Stripe finishes processing the payment and the webhook pushes the result.</li>
+            </ul>
 
----
+            <p><strong>Payment Flow:</strong></p>
+            <pre><code>STRIPE:  Create payment (pending) → redirect to Stripe → webhook → success/failed</code></pre>
 
-### `order_items` — Order Details
+            <hr>
 
-```
-order_items
-─────────────────────────────────────────
-id                 | uuid     PK
-order_id           | uuid     FK → orders.id
-product_id         | uuid     FK → products.id
-quantity           | int
-unit_price         | decimal              -- price snapshot at time of order
-```
+            <h2>Complete ERD Summary</h2>
+            <h3>Table List</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Table</th>
+                  <th>Section</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td><code>users</code></td><td>1</td><td>Users</td></tr>
+                <tr><td>2</td><td><code>artists</code></td><td>2</td><td>Artists</td></tr>
+                <tr><td>3</td><td><code>genres</code></td><td>2</td><td>Music Genres</td></tr>
+                <tr><td>4</td><td><code>releases</code></td><td>2</td><td>Original Releases</td></tr>
+                <tr><td>5</td><td><code>release_versions</code></td><td>2</td><td>Specific Versions</td></tr>
+                <tr><td>6</td><td><code>labels</code></td><td>2</td><td>Record Labels</td></tr>
+                <tr><td>7</td><td><code>tracks</code></td><td>2</td><td>Tracklist</td></tr>
+                <tr><td>8</td><td><code>artist_genres</code></td><td>2</td><td>Junction: artist ↔ genre</td></tr>
+                <tr><td>9</td><td><code>release_genres</code></td><td>2</td><td>Junction: release ↔ genre</td></tr>
+                <tr><td>10</td><td><code>products</code></td><td>3</td><td>Products (SKU)</td></tr>
+                <tr><td>11</td><td><code>vinyl_attributes</code></td><td>3</td><td>Vinyl Attributes</td></tr>
+                <tr><td>12</td><td><code>cd_attributes</code></td><td>3</td><td>CD Attributes</td></tr>
+                <tr><td>13</td><td><code>cassette_attributes</code></td><td>3</td><td>Cassette Attributes</td></tr>
+                <tr><td>14</td><td><code>curated_collections</code></td><td>3</td><td>Themed Collections</td></tr>
+                <tr><td>15</td><td><code>curated_collection_items</code></td><td>3</td><td>Junction: collection ↔ product</td></tr>
+                <tr><td>16</td><td><code>carts</code></td><td>4</td><td>Shopping Carts</td></tr>
+                <tr><td>17</td><td><code>cart_items</code></td><td>4</td><td>Cart Items</td></tr>
+                <tr><td>18</td><td><code>orders</code></td><td>4</td><td>Orders</td></tr>
+                <tr><td>19</td><td><code>order_items</code></td><td>4</td><td>Order Details</td></tr>
+                <tr><td>20</td><td><code>payments</code></td><td>5</td><td>Payments</td></tr>
+              </tbody>
+            </table>
+            <p><strong>Total: 20 tables</strong></p>
 
-**Explanations:**
+            <hr>
 
-- `unit_price` is a snapshot of the price at the time of ordering.
-- `product_id` holds an FK to look up product info (name, image) when displaying order history.
+            <h3>Global Relationship Diagram</h3>
+            <img src="assets/diagram.png" alt="ERD Diagram" loading="lazy" />
 
----
+            <hr>
 
-## Section 5 — Payments
-
-**Number of entities: 1**
-
-### `payments` — Payments
-
-Each order has exactly 1 payment (1-1 relationship with `orders`).
-
-```
-payments
-─────────────────────────────────────────
-id               | uuid     PK
-order_id         | uuid     FK → orders.id    unique    -- 1 order only has 1 payment
-method           | enum               -- stripe
-amount           | decimal            -- payment amount
-transaction_code | string  nullable   -- transaction code from Stripe (Session ID / Payment Intent ID)
-status           | enum               -- pending | success | failed
-paid_at          | timestamp nullable -- time of successful payment
-```
-
-**Explanations:**
-
-- `order_id unique` enforces a 1-1 relationship — 1 order cannot have 2 payment records.
-- `transaction_code` is the PaymentIntent ID or Session ID from Stripe.
-- `paid_at` is the time the webhook receives the Stripe success notification.
-- `status = pending` until Stripe finishes processing the payment and the webhook pushes the result.
-
-**Payment Flow:**
-
-```
-STRIPE:  Create payment (pending) → redirect to Stripe → webhook → success/failed
-```
-
----
-
-## Section 6 — Notifications &amp; Business Events
-
-**Number of entities: 0**
-
-Email notification is a side effect of business events, not the main data model.
-The current design sends email through application handlers and does not persist notification history.
-
----
-
-## Complete ERD Summary
-
-### Table List
-
-| # | Table | Section | Description |
-|---|---|---|---|
-| 1 | `users` | 1 | Users |
-| 2 | `artists` | 2 | Artists |
-| 3 | `genres` | 2 | Music Genres |
-| 4 | `releases` | 2 | Original Releases |
-| 5 | `release_versions` | 2 | Specific Versions |
-| 6 | `labels` | 2 | Record Labels |
-| 7 | `tracks` | 2 | Tracklist |
-| 8 | `artist_genres` | 2 | Junction: artist ↔ genre |
-| 9 | `release_genres` | 2 | Junction: release ↔ genre |
-| 10 | `products` | 3 | Products (SKU) |
-| 11 | `vinyl_attributes` | 3 | Vinyl Attributes |
-| 12 | `cd_attributes` | 3 | CD Attributes |
-| 13 | `cassette_attributes` | 3 | Cassette Attributes |
-| 14 | `curated_collections` | 3 | Themed Collections |
-| 15 | `curated_collection_items` | 3 | Junction: collection ↔ product |
-| 16 | `carts` | 4 | Shopping Carts |
-| 17 | `cart_items` | 4 | Cart Items |
-| 18 | `orders` | 4 | Orders |
-| 19 | `order_items` | 4 | Order Details |
-| 20 | `payments` | 5 | Payments |
-
-**Total: 20 tables**
-
----
-
-### Global Relationship Diagram
-
-```mermaid
-erDiagram
-
-  %% ─── SECTION 1: AUTH ───
-  users {
-    uuid id PK
-    string name
-    string email
-    string password_hash
-    enum role &quot;customer | admin&quot;
-    timestamp created_at
-  }
-
-  %% ─── SECTION 2: CATALOG ───
-  artists {
-    uuid id PK
-    string name
-    text bio
-    string country
-    string image_url
-  }
-  genres {
-    uuid id PK
-    string name
-    string slug
-  }
-  artist_genres {
-    uuid artist_id FK
-    uuid genre_id FK
-  }
-  releases {
-    uuid id PK
-    uuid artist_id FK
-    string title
-    int year
-    string cover_url
-  }
-  release_genres {
-    uuid release_id FK
-    uuid genre_id FK
-  }
-  labels {
-    uuid id PK
-    string name
-    string country
-    int founded_year
-    string website
-  }
-  release_versions {
-    uuid id PK
-    uuid release_id FK
-    uuid label_id FK
-    string pressing_country
-    string catalog_number
-    int pressing_year
-    enum format &quot;vinyl | cd | cassette&quot;
-    text notes
-  }
-  tracks {
-    uuid id PK
-    uuid release_id FK
-    int position
-    string title
-    int duration_seconds
-    string side
-  }
-
-  products {
-    uuid id PK
-    uuid release_version_id FK
-    string name
-    text description
-    decimal price
-    int stock_qty
-    boolean is_available
-    boolean is_signed
-    boolean is_limited
-    int limited_qty
-    boolean is_preorder
-    date preorder_release_date
-    boolean is_active
-    timestamp created_at
-  }
-  vinyl_attributes {
-    uuid id PK
-    uuid product_id FK
-    enum disc_color &quot;black | colored | splatter | picture_disc&quot;
-    enum weight_grams &quot;140 | 180&quot;
-    enum speed_rpm &quot;33 | 45&quot;
-    enum disc_count &quot;1lp | 2lp | box_set&quot;
-    enum sleeve_type &quot;standard | gatefold | obi_strip&quot;
-  }
-  cd_attributes {
-    uuid id PK
-    uuid product_id FK
-    enum edition &quot;standard | deluxe | box_set&quot;
-    boolean is_japan_edition
-  }
-  cassette_attributes {
-    uuid id PK
-    uuid product_id FK
-    enum tape_color &quot;black | clear | white | colored&quot;
-    enum edition &quot;standard | limited&quot;
-  }
-  curated_collections {
-    uuid id PK
-    uuid created_by FK
-    string title
-    text description
-    boolean is_published
-    timestamp created_at
-  }
-  curated_collection_items {
-    uuid id PK
-    uuid collection_id FK
-    uuid product_id FK
-    int sort_order
-  }
-
-  %% ─── SECTION 4: ORDERS ───
-  carts {
-    uuid id PK
-    uuid user_id FK
-    timestamp updated_at
-  }
-  cart_items {
-    uuid id PK
-    uuid cart_id FK
-    uuid product_id FK
-    int quantity
-  }
-  orders {
-    uuid id PK
-    uuid user_id FK
-    enum status &quot;pending | confirmed | shipped | delivered | completed | cancelled&quot;
-    string shipping_address
-    string recipient_name
-    string phone
-    decimal total_amount
-    string tracking_number
-    uuid cancelled_by FK
-    text cancel_reason
-    timestamp created_at
-    timestamp updated_at
-  }
-  order_items {
-    uuid id PK
-    uuid order_id FK
-    uuid product_id FK
-    int quantity
-    decimal unit_price
-  }
-
-  %% ─── SECTION 5: PAYMENTS ───
-  payments {
-    uuid id PK
-    uuid order_id FK
-    enum method &quot;stripe&quot;
-    decimal amount
-    string transaction_code
-    enum status &quot;pending | success | failed&quot;
-    timestamp paid_at
-  }
-
-  %% ─── RELATIONSHIPS ───
-  artists ||--o{ artist_genres : &quot;has&quot;
-  genres  ||--o{ artist_genres : &quot;belongs to&quot;
-  artists ||--o{ releases : &quot;releases&quot;
-  releases ||--o{ release_genres : &quot;has&quot;
-  genres   ||--o{ release_genres : &quot;belongs to&quot;
-  releases ||--o{ tracks : &quot;contains&quot;
-  releases ||--o{ release_versions : &quot;has versions&quot;
-  labels   ||--o{ release_versions : &quot;releases&quot;
-
-  release_versions ||--o{ products : &quot;is basis for&quot;
-  products ||--o| vinyl_attributes : &quot;attributes&quot;
-  products ||--o| cd_attributes : &quot;attributes&quot;
-  products ||--o| cassette_attributes : &quot;attributes&quot;
-  curated_collections ||--o{ curated_collection_items : &quot;contains&quot;
-  products ||--o{ curated_collection_items : &quot;belongs to&quot;
-
-  users ||--o| carts : &quot;has&quot;
-  carts ||--o{ cart_items : &quot;contains&quot;
-  products ||--o{ cart_items : &quot;in cart&quot;
-
-  users ||--o{ orders : &quot;places&quot;
-  orders ||--o{ order_items : &quot;contains&quot;
-  products ||--o{ order_items : &quot;in order&quot;
-  orders ||--|| payments : &quot;has&quot;
-
-```
-
----
-
-### Application-Layer Business Rules
-
-These rules cannot be modeled purely in the DB schema and must be handled in the service layer:
-
-| Business Rule | Where it&#39;s handled |
-|---|---|
-| Do not delete product when order is Pending/Confirmed | Service layer check before delete |
-| `limited_qty` cannot be increased after sales start | Validation in Admin API |
-| Only Admin can cancel orders from Confirmed status onwards | Authorization middleware |
-| Pre-order stock is not deducted before release date | Checkout service check `is_preorder + preorder_release_date` |
-</pre>
-          </article>
+            <h3>Application-Layer Business Rules</h3>
+            <p>These rules cannot be modeled purely in the DB schema and must be handled in the service layer:</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Business Rule</th>
+                  <th>Where it's handled</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Do not delete product when order is Pending/Confirmed</td>
+                  <td>Service layer check before delete</td>
+                </tr>
+                <tr>
+                  <td><code>limited_qty</code> cannot be increased after sales start</td>
+                  <td>Validation in Admin API</td>
+                </tr>
+                <tr>
+                  <td>Only Admin can cancel orders from Confirmed status onwards</td>
+                  <td>Authorization middleware</td>
+                </tr>
+                <tr>
+                  <td>Pre-order stock is not deducted before release date</td>
+                  <td>Checkout service check <code>is_preorder + preorder_release_date</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </main>

@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script defer src="docs-viewer.js"></script>
   </head>
   <body class="docs-body">
     <header class="docs-header">
@@ -27,1262 +28,1125 @@
         <div class="docs-shell">
           <p class="docs-kicker">Cat Music Shop Documentation</p>
           <h1>API Endpoint Design</h1>
-          <p>Original documentation content preserved from <code>api-endpoint-design.md</code>.</p>
+          <p>RESTful patterns, authentication, catalog, products, orders, and payments.</p>
         </div>
       </section>
 
       <section class="docs-source-section">
         <div class="docs-shell">
-          <article class="markdown-document">
-            <pre># API Endpoint Design — Vinyl Shop
+          <div class="markdown-rendered">
+            <h1>API Endpoint Design — Vinyl Shop</h1>
 
-## General Conventions
+            <h2>General Conventions</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Convention</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Base URL</td>
+                  <td><code>/api/v1</code></td>
+                </tr>
+                <tr>
+                  <td>Auth header</td>
+                  <td><code>Authorization: Bearer &lt;jwt_token&gt;</code></td>
+                </tr>
+                <tr>
+                  <td>Content-Type</td>
+                  <td><code>application/json</code></td>
+                </tr>
+                <tr>
+                  <td>ID format</td>
+                  <td>UUID v4</td>
+                </tr>
+                <tr>
+                  <td>Datetime</td>
+                  <td>ISO 8601 — <code>2024-01-15T10:30:00Z</code></td>
+                </tr>
+                <tr>
+                  <td>Naming</td>
+                  <td><strong>camelCase</strong> for JSON (request/response)</td>
+                </tr>
+              </tbody>
+            </table>
 
-| Item | Convention |
-|---|---|
-| Base URL | `/api/v1` |
-| Auth header | `Authorization: Bearer &lt;jwt_token&gt;` |
-| Content-Type | `application/json` |
-| ID format | UUID v4 |
-| Datetime | ISO 8601 — `2024-01-15T10:30:00Z` |
-| Naming | **camelCase** for JSON (request/response) |
+            <h3>Implementation Sync Notes</h3>
+            <p>Synced with current ASP.NET controllers on 2026-05-06.</p>
+            <ul>
+              <li><code>POST /api/v1/orders</code> creates the order and Stripe checkout data; there is no standalone <code>POST /api/v1/payments/stripe/create-session</code> endpoint.</li>
+              <li><code>POST /api/v1/payments/stripe/webhook</code> is the only payment controller endpoint.</li>
+              <li>Product details support both slug and GUID routes: <code>GET /api/v1/products/{slug}</code> and <code>GET /api/v1/products/{id}</code>. The GUID route is public; there is no <code>/products/admin/{id}</code> endpoint.</li>
+              <li>Standalone track search is not implemented; tracks are exposed through release detail responses.</li>
+              <li>Release version detail by ID is not implemented; release versions are listed by release using <code>GET /api/v1/releaseversions/by-release/{releaseId}</code>.</li>
+              <li><code>POST /api/v1/auth/logout</code> is a public route that invalidates the <code>refreshToken</code> cookie when present.</li>
+            </ul>
 
-### Implementation Sync Notes
+            <h3>Permissions</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Condition</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Guest</strong></td>
+                  <td>No JWT, or invalid JWT</td>
+                </tr>
+                <tr>
+                  <td><strong>Customer</strong></td>
+                  <td>Valid JWT + <code>role = customer</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Admin</strong></td>
+                  <td>Valid JWT + <code>role = admin</code></td>
+                </tr>
+              </tbody>
+            </table>
 
-Synced with current ASP.NET controllers on 2026-05-06.
-
-- `POST /api/v1/orders` creates the order and Stripe checkout data; there is no standalone `POST /api/v1/payments/stripe/create-session` endpoint.
-- `POST /api/v1/payments/stripe/webhook` is the only payment controller endpoint.
-- Product details support both slug and GUID routes: `GET /api/v1/products/{slug}` and `GET /api/v1/products/{id}`. The GUID route is public; there is no `/products/admin/{id}` endpoint.
-- Standalone track search is not implemented; tracks are exposed through release detail responses.
-- Release version detail by ID is not implemented; release versions are listed by release using `GET /api/v1/releaseversions/by-release/{releaseId}`.
-- `POST /api/v1/auth/logout` is a public route that invalidates the `refreshToken` cookie when present.
-
-### Permissions
-
-| Role | Condition |
-|---|---|
-| **Guest** | No JWT, or invalid JWT |
-| **Customer** | Valid JWT + `role = customer` |
-| **Admin** | Valid JWT + `role = admin` |
-
-### Response Structure
-
-**Success:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: { ... },
-  &quot;meta&quot;: {
-    &quot;page&quot;: 1,
-    &quot;limit&quot;: 20,
-    &quot;total&quot;: 120
+            <h3>Response Structure</h3>
+            <p><strong>Success:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": { ... },
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 120
   }
-}
-```
+}</code></pre>
 
-**Error:**
-```json
-{
-  &quot;type&quot;: &quot;https://tools.ietf.org/html/rfc7231#section-6.5.4&quot;,
-  &quot;title&quot;: &quot;Product.NotFound&quot;,
-  &quot;status&quot;: 404,
-  &quot;detail&quot;: &quot;The product was not found.&quot;,
-  &quot;traceId&quot;: &quot;...&quot;
-}
-```
+            <p><strong>Error:</strong></p>
+            <pre><code>{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+  "title": "Product.NotFound",
+  "status": 404,
+  "detail": "The product was not found.",
+  "traceId": "..."
+}</code></pre>
+            <p>Controller errors use ASP.NET <code>ProblemDetails</code> from <code>BaseApiController.MapError</code>, not <code>ApiResponse&lt;T&gt;</code>.</p>
 
-Controller errors use ASP.NET `ProblemDetails` from `BaseApiController.MapError`, not `ApiResponse&lt;T&gt;`.
+            <h3>Common Error Codes</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>HTTP</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>*.Unauthorized</code></td>
+                  <td>401</td>
+                  <td>Not logged in or invalid credentials</td>
+                </tr>
+                <tr>
+                  <td><code>*.Forbidden</code></td>
+                  <td>403</td>
+                  <td>Insufficient permissions</td>
+                </tr>
+                <tr>
+                  <td><code>*.NotFound</code></td>
+                  <td>404</td>
+                  <td>Resource does not exist</td>
+                </tr>
+                <tr>
+                  <td><code>*.Validation</code></td>
+                  <td>400</td>
+                  <td>Invalid input data</td>
+                </tr>
+                <tr>
+                  <td><code>*.Conflict</code></td>
+                  <td>409</td>
+                  <td>Business conflict, duplicate value, or invalid state</td>
+                </tr>
+              </tbody>
+            </table>
 
-### Common Error Codes
+            <hr>
 
-| Code | HTTP | Meaning |
-|---|---|---|
-| `*.Unauthorized` | 401 | Not logged in or invalid credentials |
-| `*.Forbidden` | 403 | Insufficient permissions |
-| `*.NotFound` | 404 | Resource does not exist |
-| `*.Validation` | 400 | Invalid input data |
-| `*.Conflict` | 409 | Business conflict, duplicate value, or invalid state |
+            <h2>Section 1 — Authentication</h2>
 
----
+            <h3><code>POST /api/v1/auth/register</code></h3>
+            <p>Register a new account. Default role is <code>customer</code>.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "name": "John Doe",
+  "email": "user@example.com",
+  "password": "plaintext_password"
+}</code></pre>
 
-## Section 1 — Authentication
-
-### `POST /api/v1/auth/register`
-
-Register a new account. Default role is `customer`.
-
-**Auth:** Public
-
-**Request body:**
-```json
-{
-  &quot;name&quot;: &quot;John Doe&quot;,
-  &quot;email&quot;: &quot;user@example.com&quot;,
-  &quot;password&quot;: &quot;plaintext_password&quot;
-}
-```
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;accessToken&quot;: &quot;jwt_access_token_string&quot;,
-    &quot;refreshToken&quot;: &quot;refresh_token_string&quot;,
-    &quot;accessTokenExpiresAt&quot;: &quot;2024-01-15T10:15:00Z&quot;,
-    &quot;user&quot;: {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;email&quot;: &quot;user@example.com&quot;,
-      &quot;fullName&quot;: &quot;John Doe&quot;,
-      &quot;role&quot;: &quot;Customer&quot;,
-      &quot;createdAt&quot;: &quot;2024-01-15T10:00:00Z&quot;
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "accessToken": "jwt_access_token_string",
+    "refreshToken": "refresh_token_string",
+    "accessTokenExpiresAt": "2024-01-15T10:15:00Z",
+    "user": {
+      "id": "uuid",
+      "email": "user@example.com",
+      "fullName": "John Doe",
+      "role": "Customer",
+      "createdAt": "2024-01-15T10:00:00Z"
     }
   }
-}
-```
+}</code></pre>
 
-### `POST /api/v1/auth/google-login`
+            <h3><code>POST /api/v1/auth/google-login</code></h3>
+            <p>Login with Google account. Backend validates <code>idToken</code> and returns JWT.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "idToken": "google_id_token_from_frontend"
+}</code></pre>
+            <p><strong>Response <code>200</code>:</strong> Returns an <code>AuthResponse</code> object containing JWT and user information.</p>
 
-Login with Google account. Backend validates `idToken` and returns JWT.
+            <hr>
 
-**Auth:** Public
+            <h3><code>POST /api/v1/auth/login</code></h3>
+            <p>Login with email/password.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "email": "user@example.com",
+  "password": "plaintext_password"
+}</code></pre>
 
-**Request body:**
-```json
-{
-  &quot;idToken&quot;: &quot;google_id_token_from_frontend&quot;
-}
-```
+            <p><strong>Response <code>200</code>:</strong> Same structure as <code>/register</code>.</p>
 
-**Response `200`:** Returns an `AuthResponse` object containing JWT and user information.
+            <hr>
 
----
+            <h3><code>POST /api/v1/auth/refresh</code></h3>
+            <p>Obtain a new Access Token using Refresh Token from cookie.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Request:</strong> Refresh Token is automatically retrieved from HttpOnly cookie.</p>
+            <p><strong>Response <code>200</code>:</strong> Returns a new <code>AuthResponse</code> object (similar to <code>/login</code>).</p>
 
-### `POST /api/v1/auth/login`
+            <hr>
 
-Login with email/password.
+            <h3><code>POST /api/v1/auth/logout</code></h3>
+            <p>Invalidate current Refresh Token to log out completely. Clears cookie.</p>
+            <p><strong>Auth:</strong> Public route; requires <code>refreshToken</code> cookie to invalidate a session.</p>
+            <p><strong>Request:</strong> Refresh Token is retrieved from cookie.</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{ "success": true, "data": null }</code></pre>
 
-**Auth:** Public
+            <hr>
 
-**Request body:**
-```json
-{
-  &quot;email&quot;: &quot;user@example.com&quot;,
-  &quot;password&quot;: &quot;plaintext_password&quot;
-}
-```
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;accessToken&quot;: &quot;jwt_access_token_string&quot;,
-    &quot;refreshToken&quot;: &quot;refresh_token_string&quot;,
-    &quot;accessTokenExpiresAt&quot;: &quot;2024-01-15T10:15:00Z&quot;,
-    &quot;user&quot;: {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;email&quot;: &quot;user@example.com&quot;,
-      &quot;fullName&quot;: &quot;John Doe&quot;,
-      &quot;role&quot;: &quot;Customer&quot;,
-      &quot;createdAt&quot;: &quot;2024-01-15T10:00:00Z&quot;
-    }
+            <h3><code>GET /api/v1/auth/me</code></h3>
+            <p>Get information of the currently logged-in user.</p>
+            <p><strong>Auth:</strong> Customer, Admin</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "fullName": "John Doe",
+    "role": "Customer",
+    "createdAt": "2024-01-15T10:00:00Z"
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-### `POST /api/v1/auth/refresh`
+            <h3><code>POST /api/v1/auth/change-password</code></h3>
+            <p>Change password while logged in.</p>
+            <p><strong>Auth:</strong> Customer, Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "currentPassword": "old_password",
+  "newPassword": "new_secure_password"
+}</code></pre>
 
-Obtain a new Access Token using Refresh Token from cookie.
+            <hr>
 
-**Auth:** Public
+            <h2>Section 2 — Catalog</h2>
 
-**Request:** Refresh Token is automatically retrieved from HttpOnly cookie.
+            <h3><code>GET /api/v1/artists</code></h3>
+            <p>List of artists, supports filtering and pagination.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Query params:</strong></p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Param</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>genreId</code></td>
+                  <td>uuid</td>
+                  <td>Filter by genre</td>
+                </tr>
+                <tr>
+                  <td><code>q</code></td>
+                  <td>string</td>
+                  <td>Search by name</td>
+                </tr>
+                <tr>
+                  <td><code>pageNumber</code></td>
+                  <td>int</td>
+                  <td>Page (default: 1)</td>
+                </tr>
+                <tr>
+                  <td><code>pageSize</code></td>
+                  <td>int</td>
+                  <td>Items per page (default: 20)</td>
+                </tr>
+              </tbody>
+            </table>
 
-**Response `200`:** Returns a new `AuthResponse` object (similar to `/login`).
-
----
-
-### `POST /api/v1/auth/logout`
-
-Invalidate current Refresh Token to log out completely. Clears cookie.
-
-**Auth:** Public route; requires `refreshToken` cookie to invalidate a session.
-
-**Request:** Refresh Token is retrieved from cookie.
-
-**Response `200`:**
-```json
-{ &quot;success&quot;: true, &quot;data&quot;: null }
-```
-
----
-
-### `GET /api/v1/auth/me`
-
-Get information of the currently logged-in user.
-
-**Auth:** Customer, Admin
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;id&quot;: &quot;uuid&quot;,
-    &quot;email&quot;: &quot;user@example.com&quot;,
-    &quot;fullName&quot;: &quot;John Doe&quot;,
-    &quot;role&quot;: &quot;Customer&quot;,
-    &quot;createdAt&quot;: &quot;2024-01-15T10:00:00Z&quot;
-  }
-}
-```
-
----
-
-### `POST /api/v1/auth/change-password`
-
-Change password while logged in.
-
-**Auth:** Customer, Admin
-
-**Request body:**
-```json
-{
-  &quot;currentPassword&quot;: &quot;old_password&quot;,
-  &quot;newPassword&quot;: &quot;new_secure_password&quot;
-}
-```
-
-## Section 2 — Catalog
-
-### `GET /api/v1/artists`
-
-List of artists, supports filtering and pagination.
-
-**Auth:** Public
-
-**Query params:**
-
-| Param | Type | Description |
-|---|---|---|
-| `genreId` | uuid | Filter by genre |
-| `q` | string | Search by name |
-| `pageNumber` | int | Page (default: 1) |
-| `pageSize` | int | Items per page (default: 20) |
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: [
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
     {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;name&quot;: &quot;Pink Floyd&quot;,
-      &quot;country&quot;: &quot;UK&quot;,
-      &quot;imageUrl&quot;: &quot;https://cdn.example.com/artists/pink-floyd.jpg&quot;,
-      &quot;genres&quot;: [
-        { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Progressive Rock&quot;, &quot;slug&quot;: &quot;progressive-rock&quot; }
+      "id": "uuid",
+      "name": "Pink Floyd",
+      "country": "UK",
+      "imageUrl": "https://cdn.example.com/artists/pink-floyd.jpg",
+      "genres": [
+        { "id": "uuid", "name": "Progressive Rock", "slug": "progressive-rock" }
       ]
     }
   ],
-  &quot;meta&quot;: { &quot;pageNumber&quot;: 1, &quot;pageSize&quot;: 20, &quot;maxPage&quot;: 5, &quot;totalCount&quot;: 85 }
-}
-```
+  "meta": { "pageNumber": 1, "pageSize": 20, "maxPage": 5, "totalCount": 85 }
+}</code></pre>
 
----
+            <hr>
 
-### `GET /api/v1/artists/{slug}`
-
-Artist details, including list of releases.
-
-**Auth:** Public
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;id&quot;: &quot;uuid&quot;,
-    &quot;name&quot;: &quot;Pink Floyd&quot;,
-    &quot;slug&quot;: &quot;pink-floyd&quot;,
-    &quot;bio&quot;: &quot;...&quot;,
-    &quot;country&quot;: &quot;UK&quot;,
-    &quot;imageUrl&quot;: &quot;https://...&quot;,
-    &quot;genres&quot;: [...],
-    &quot;releases&quot;: [
+            <h3><code>GET /api/v1/artists/{slug}</code></h3>
+            <p>Artist details, including list of releases.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Pink Floyd",
+    "slug": "pink-floyd",
+    "bio": "...",
+    "country": "UK",
+    "imageUrl": "https://...",
+    "genres": [...],
+    "releases": [
       {
-        &quot;id&quot;: &quot;uuid&quot;,
-        &quot;title&quot;: &quot;The Dark Side of the Moon&quot;,
-        &quot;year&quot;: 1973,
-        &quot;coverUrl&quot;: &quot;https://...&quot;
+        "id": "uuid",
+        "title": "The Dark Side of the Moon",
+        "year": 1973,
+        "coverUrl": "https://..."
       }
     ]
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-### `POST /api/v1/artists`
+            <h3><code>POST /api/v1/artists</code></h3>
+            <p>Create a new artist.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "name": "Miles Davis",
+  "bio": "...",
+  "country": "US",
+  "imageUrl": "https://...",
+  "genreIds": ["uuid1", "uuid2"]
+}</code></pre>
+            <p><strong>Response <code>201</code>:</strong> Returns the created artist object.</p>
 
-Create a new artist.
+            <hr>
 
-**Auth:** Admin
+            <h3><code>PUT /api/v1/artists/{id}</code></h3>
+            <p>Update artist information. Uses <code>{id:guid}</code> to identify the resource precisely.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong> Similar to <code>POST /artists</code>.</p>
+            <p><strong>Response <code>200</code>:</strong> Returns the updated artist object.</p>
 
-**Request body:**
-```json
-{
-  &quot;name&quot;: &quot;Miles Davis&quot;,
-  &quot;bio&quot;: &quot;...&quot;,
-  &quot;country&quot;: &quot;US&quot;,
-  &quot;imageUrl&quot;: &quot;https://...&quot;,
-  &quot;genreIds&quot;: [&quot;uuid1&quot;, &quot;uuid2&quot;]
-}
-```
+            <hr>
 
-**Response `201`:** Returns the created artist object.
+            <h3><code>DELETE /api/v1/artists/{id}</code></h3>
+            <p>Delete artist (requires <code>{id:guid}</code>). Only possible when no releases are linked.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{ "success": true, "data": null }</code></pre>
 
----
+            <hr>
 
-### `PUT /api/v1/artists/{id}`
+            <h3><code>GET /api/v1/genres</code></h3>
+            <p>List of all music genres.</p>
+            <p><strong>Auth:</strong> Public</p>
 
-Update artist information. Uses {id:guid} to identify the resource precisely.
+            <hr>
 
-**Auth:** Admin
+            <h3><code>GET /api/v1/genres/{slug}</code></h3>
+            <p>Genre details.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": { "id": "uuid", "name": "Progressive Rock", "slug": "progressive-rock" }
+}</code></pre>
 
-**Request body:** Similar to `POST /artists`.
+            <hr>
 
-**Response `200`:** Returns the updated artist object.
+            <h3><code>POST /api/v1/genres</code></h3>
+            <p>Create a new genre.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "name": "Jazz Fusion",
+  "slug": "jazz-fusion"
+}</code></pre>
+            <p><strong>Response <code>201</code>:</strong> Returns the created genre object.</p>
 
----
+            <hr>
 
-### `DELETE /api/v1/artists/{id}`
+            <h3><code>PUT /api/v1/genres/{id}</code></h3>
+            <p>Update genre information (uses <code>{id:guid}</code>).</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "name": "Heavy Metal",
+  "slug": "heavy-metal"
+}</code></pre>
+            <p><strong>Response <code>200</code>:</strong> Returns the updated genre object.</p>
 
-Delete artist (requires {id:guid}). Only possible when no releases are linked.
+            <hr>
 
-**Auth:** Admin
+            <h3><code>DELETE /api/v1/genres/{id}</code></h3>
+            <p>Delete genre (uses <code>{id:guid}</code>). Only performed when no Artist or Release is linked.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{ "success": true, "data": null }</code></pre>
 
-**Response `200`:**
-```json
-{ &quot;success&quot;: true, &quot;data&quot;: null }
-```
+            <hr>
 
----
+            <h3><code>GET /api/v1/releases</code></h3>
+            <p>List of releases, supports filtering.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Query params:</strong></p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Param</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>artistId</code></td>
+                  <td>uuid</td>
+                  <td>Filter by artist</td>
+                </tr>
+                <tr>
+                  <td><code>genreId</code></td>
+                  <td>uuid</td>
+                  <td>Filter by genre</td>
+                </tr>
+                <tr>
+                  <td><code>format</code></td>
+                  <td>string</td>
+                  <td>Format (vinyl, cd, cassette)</td>
+                </tr>
+                <tr>
+                  <td><code>q</code></td>
+                  <td>string</td>
+                  <td>Search by name</td>
+                </tr>
+                <tr>
+                  <td><code>pageNumber</code></td>
+                  <td>int</td>
+                  <td>Page (default: 1)</td>
+                </tr>
+                <tr>
+                  <td><code>pageSize</code></td>
+                  <td>int</td>
+                  <td>Items per page (default: 20)</td>
+                </tr>
+              </tbody>
+            </table>
 
-### `GET /api/v1/genres`
-
-List of all music genres.
-
-**Auth:** Public
-
----
-
-### `GET /api/v1/genres/{slug}`
-
-Genre details.
-
-**Auth:** Public
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Progressive Rock&quot;, &quot;slug&quot;: &quot;progressive-rock&quot; }
-}
-```
-
----
-
-### `POST /api/v1/genres`
-
-Create a new genre.
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;name&quot;: &quot;Jazz Fusion&quot;,
-  &quot;slug&quot;: &quot;jazz-fusion&quot;
-}
-```
-
-**Response `201`:** Returns the created genre object.
-
----
-
-### `PUT /api/v1/genres/{id}`
-
-Update genre information (uses {id:guid}).
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;name&quot;: &quot;Heavy Metal&quot;,
-  &quot;slug&quot;: &quot;heavy-metal&quot;
-}
-```
-
-**Response `200`:** Returns the updated genre object.
-
----
-
-### `DELETE /api/v1/genres/{id}`
-
-Delete genre (uses {id:guid}). Only performed when no Artist or Release is linked.
-
-**Auth:** Admin
-
-**Response `200`:**
-```json
-{ &quot;success&quot;: true, &quot;data&quot;: null }
-```
-
----
-
-### `GET /api/v1/releases`
-
-List of releases, supports filtering.
-
-**Auth:** Public
-
-**Query params:**
-
-| Param | Type | Description |
-|---|---|---|
-| `artistId` | uuid | Filter by artist |
-| `genreId` | uuid | Filter by genre |
-| `format` | string | Format (vinyl, cd, cassette) |
-| `q` | string | Search by name |
-| `pageNumber` | int | Page (default: 1) |
-| `pageSize` | int | Items per page (default: 20) |
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: [
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
     {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;title&quot;: &quot;The Dark Side of the Moon&quot;,
-      &quot;year&quot;: 1973,
-      &quot;coverUrl&quot;: &quot;https://...&quot;,
-      &quot;artist&quot;: { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Pink Floyd&quot; },
-      &quot;genres&quot;: [...]
+      "id": "uuid",
+      "title": "The Dark Side of the Moon",
+      "year": 1973,
+      "coverUrl": "https://...",
+      "artist": { "id": "uuid", "name": "Pink Floyd" },
+      "genres": [...]
     }
   ],
-  &quot;meta&quot;: { &quot;pageNumber&quot;: 1, &quot;pageSize&quot;: 20, &quot;maxPage&quot;: 12, &quot;totalCount&quot;: 240 }
-}
-```
+  "meta": { "pageNumber": 1, "pageSize": 20, "maxPage": 12, "totalCount": 240 }
+}</code></pre>
 
----
+            <hr>
 
-### `GET /api/v1/releases/{slug}`
-
-Release details, including tracklist and list of pressing versions.
-
-**Auth:** Public
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;id&quot;: &quot;uuid&quot;,
-    &quot;title&quot;: &quot;The Dark Side of the Moon&quot;,
-    &quot;year&quot;: 1973,
-    &quot;coverUrl&quot;: &quot;https://...&quot;,
-    &quot;artist&quot;: { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Pink Floyd&quot; },
-    &quot;genres&quot;: [...],
-    &quot;tracks&quot;: [
+            <h3><code>GET /api/v1/releases/{slug}</code></h3>
+            <p>Release details, including tracklist and list of pressing versions.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "title": "The Dark Side of the Moon",
+    "year": 1973,
+    "coverUrl": "https://...",
+    "artist": { "id": "uuid", "name": "Pink Floyd" },
+    "genres": [...],
+    "tracks": [
       {
-        &quot;id&quot;: &quot;uuid&quot;,
-        &quot;position&quot;: 1,
-        &quot;title&quot;: &quot;Speak to Me&quot;,
-        &quot;durationSeconds&quot;: 68,
-        &quot;side&quot;: &quot;A&quot;
+        "id": "uuid",
+        "position": 1,
+        "title": "Speak to Me",
+        "durationSeconds": 68,
+        "side": "A"
       }
     ],
-    &quot;versions&quot;: [
+    "versions": [
       {
-        &quot;id&quot;: &quot;uuid&quot;,
-        &quot;pressingCountry&quot;: &quot;UK&quot;,
-        &quot;pressingYear&quot;: 1973,
-        &quot;format&quot;: &quot;vinyl&quot;,
-        &quot;catalogNumber&quot;: &quot;SHVL 804&quot;,
-        &quot;label&quot;: { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Harvest Records&quot; },
-        &quot;notes&quot;: &quot;First UK pressing&quot;
+        "id": "uuid",
+        "pressingCountry": "UK",
+        "pressingYear": 1973,
+        "format": "vinyl",
+        "catalogNumber": "SHVL 804",
+        "label": { "id": "uuid", "name": "Harvest Records" },
+        "notes": "First UK pressing"
       }
     ]
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-### `POST /api/v1/releases`
-
-Create a new release.
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;artistId&quot;: &quot;uuid&quot;,
-  &quot;title&quot;: &quot;Wish You Were Here&quot;,
-  &quot;year&quot;: 1975,
-  &quot;coverUrl&quot;: &quot;https://...&quot;,
-  &quot;genreIds&quot;: [&quot;uuid1&quot;],
-  &quot;tracks&quot;: [
+            <h3><code>POST /api/v1/releases</code></h3>
+            <p>Create a new release.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "artistId": "uuid",
+  "title": "Wish You Were Here",
+  "year": 1975,
+  "coverUrl": "https://...",
+  "genreIds": ["uuid1"],
+  "tracks": [
     {
-      &quot;position&quot;: 1,
-      &quot;title&quot;: &quot;Shine On You Crazy Diamond (Parts I-V)&quot;,
-      &quot;durationSeconds&quot;: 817,
-      &quot;side&quot;: &quot;A&quot;
+      "position": 1,
+      "title": "Shine On You Crazy Diamond (Parts I-V)",
+      "durationSeconds": 817,
+      "side": "A"
     }
   ]
-}
-```
+}</code></pre>
+            <p><strong>Response <code>201</code>:</strong> Returns the created release object (with tracks).</p>
 
-**Response `201`:** Returns the created release object (with tracks).
+            <hr>
 
----
+            <h3><code>PUT /api/v1/releases/{id}</code></h3>
+            <p>Update release.</p>
+            <p><strong>Auth:</strong> Admin</p>
 
-### `PUT /api/v1/releases/{id}`
+            <hr>
 
-Update release.
+            <h3><code>DELETE /api/v1/releases/{id}</code></h3>
+            <p>Delete release.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Response <code>204</code>:</strong></p>
 
-**Auth:** Admin
+            <hr>
 
----
+            <h3><code>GET /api/v1/releaseversions/by-release/{releaseId}</code></h3>
+            <p>List of pressing versions for a release.</p>
+            <p><strong>Auth:</strong> Public</p>
 
-### `DELETE /api/v1/releases/{id}`
+            <hr>
 
-Delete release.
+            <h3><code>GET /api/v1/releaseversions/formats</code></h3>
+            <p>List of supported formats.</p>
+            <p><strong>Auth:</strong> Public</p>
 
-**Auth:** Admin
+            <hr>
 
-**Response `204`:**
+            <h3><code>POST /api/v1/releaseversions</code></h3>
+            <p>Create a new pressing version for a release.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "releaseId": "uuid",
+  "labelId": "uuid",
+  "pressingCountry": "Japan",
+  "catalogNumber": "EMS-80324",
+  "pressingYear": 1976,
+  "format": "vinyl",
+  "notes": "OBI strip, first Japan pressing"
+}</code></pre>
+            <p><strong>Response <code>201</code>:</strong> Returns the created release_version object.</p>
 
----
+            <hr>
 
-### `GET /api/v1/releaseversions/by-release/{releaseId}`
+            <h3><code>PUT /api/v1/releaseversions/{id}</code></h3>
+            <p>Update pressing version.</p>
+            <p><strong>Auth:</strong> Admin</p>
 
-List of pressing versions for a release.
+            <hr>
 
-**Auth:** Public
+            <h3><code>DELETE /api/v1/releaseversions/{id}</code></h3>
+            <p>Delete pressing version. Cannot be deleted if a <code>Product</code> is linked.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{ "success": true, "data": null }</code></pre>
 
----
+            <hr>
 
-### `GET /api/v1/releaseversions/formats`
+            <h3><code>GET /api/v1/labels</code></h3>
+            <p>List of record labels.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Query params:</strong> <code>q</code> (search by name), <code>country</code>, <code>page</code>, <code>limit</code></p>
 
-List of supported formats.
+            <hr>
 
-**Auth:** Public
-
----
-
-### `POST /api/v1/releaseversions`
-
-Create a new pressing version for a release.
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;releaseId&quot;: &quot;uuid&quot;,
-  &quot;labelId&quot;: &quot;uuid&quot;,
-  &quot;pressingCountry&quot;: &quot;Japan&quot;,
-  &quot;catalogNumber&quot;: &quot;EMS-80324&quot;,
-  &quot;pressingYear&quot;: 1976,
-  &quot;format&quot;: &quot;vinyl&quot;,
-  &quot;notes&quot;: &quot;OBI strip, first Japan pressing&quot;
-}
-```
-
-**Response `201`:** Returns the created release_version object.
-
----
-
-### `PUT /api/v1/releaseversions/{id}`
-
-Update pressing version.
-
-**Auth:** Admin
-
----
-
-### `DELETE /api/v1/releaseversions/{id}`
-
-Delete pressing version. Cannot be deleted if a `Product` is linked.
-
-**Auth:** Admin
-
-**Response `200`:**
-```json
-{ &quot;success&quot;: true, &quot;data&quot;: null }
-```
-
----
-
-### `GET /api/v1/labels`
-
-List of record labels.
-
-**Auth:** Public
-
-**Query params:** `q` (search by name), `country`, `page`, `limit`
-
----
-
-### `GET /api/v1/labels/{slug}`
-
-Label details.
-
-**Auth:** Public
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;id&quot;: &quot;uuid&quot;,
-    &quot;name&quot;: &quot;Harvest Records&quot;,
-    &quot;country&quot;: &quot;UK&quot;,
-    &quot;foundedYear&quot;: 1969,
-    &quot;website&quot;: &quot;https://...&quot;
+            <h3><code>GET /api/v1/labels/{slug}</code></h3>
+            <p>Label details.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Harvest Records",
+    "country": "UK",
+    "foundedYear": 1969,
+    "website": "https://..."
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-### `POST /api/v1/labels`
+            <h3><code>POST /api/v1/labels</code></h3>
+            <p>Create a new label.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "name": "Harvest Records",
+  "country": "UK",
+  "foundedYear": 1969,
+  "website": "https://..."
+}</code></pre>
+            <p><strong>Response <code>201</code>:</strong> Returns the created label.</p>
 
-Create a new label.
+            <hr>
 
-**Auth:** Admin
+            <h3><code>PUT /api/v1/labels/{id}</code></h3>
+            <p>Update label (uses <code>{id:guid}</code>).</p>
+            <p><strong>Auth:</strong> Admin</p>
 
-**Request body:**
-```json
-{
-  &quot;name&quot;: &quot;Harvest Records&quot;,
-  &quot;country&quot;: &quot;UK&quot;,
-  &quot;foundedYear&quot;: 1969,
-  &quot;website&quot;: &quot;https://...&quot;
-}
-```
+            <hr>
 
-**Response `201`:** Returns the created label.
+            <h3><code>DELETE /api/v1/labels/{id}</code></h3>
+            <p>Delete label (uses <code>{id:guid}</code>). Only performed when no release version is linked.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{ "success": true, "data": null }</code></pre>
 
----
+            <hr>
 
-### `PUT /api/v1/labels/{id}`
+            <h2>Section 3 — Products</h2>
 
-Update label (uses {id:guid}).
+            <h3><code>GET /api/v1/products</code></h3>
+            <p>List of products for sale (<code>is_active = true</code>). Admin can see hidden products as well.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Query params:</strong></p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Param</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>format</code></td><td>enum</td><td><code>vinyl</code> / <code>cd</code> / <code>cassette</code></td></tr>
+                <tr><td><code>genre</code></td><td>string</td><td>Slug of genre</td></tr>
+                <tr><td><code>artistId</code></td><td>uuid</td><td>Filter by artist</td></tr>
+                <tr><td><code>isLimited</code></td><td>boolean</td><td>Show only limited items</td></tr>
+                <tr><td><code>isPreorder</code></td><td>boolean</td><td>Show only pre-order items</td></tr>
+                <tr><td><code>minPrice</code></td><td>decimal</td><td>Minimum price</td></tr>
+                <tr><td><code>maxPrice</code></td><td>decimal</td><td>Maximum price</td></tr>
+                <tr><td><code>searchQuery</code></td><td>string</td><td>Search by product name</td></tr>
+                <tr><td><code>pageNumber</code></td><td>int</td><td>Page (default: 1)</td></tr>
+                <tr><td><code>pageSize</code></td><td>int</td><td>Items per page (default: 20)</td></tr>
+              </tbody>
+            </table>
 
-**Auth:** Admin
-
----
-
-### `DELETE /api/v1/labels/{id}`
-
-Delete label (uses {id:guid}). Only performed when no release version is linked.
-
-**Auth:** Admin
-
-**Response `200`:**
-```json
-{ &quot;success&quot;: true, &quot;data&quot;: null }
-```
-
----
-
-Standalone track search is not implemented in the current API. Track data is returned through release details.
-
----
-
-## Section 3 — Products
-
-### `GET /api/v1/products`
-
-List of products for sale (`is_active = true`). Admin can see hidden products as well.
-
-**Auth:** Public
-
-**Query params:**
-
-| Param | Type | Description |
-|---|---|---|
-| `format` | enum | `vinyl` / `cd` / `cassette` |
-| `genre` | string | Slug of genre |
-| `artistId` | uuid | Filter by artist |
-| `isLimited` | boolean | Show only limited items |
-| `isPreorder` | boolean | Show only pre-order items |
-| `minPrice` | decimal | Minimum price |
-| `maxPrice` | decimal | Maximum price |
-| `searchQuery` | string | Search by product name |
-| `pageNumber` | int | Page (default: 1) |
-| `pageSize` | int | Items per page (default: 20) |
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: [
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
     {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;name&quot;: &quot;Pink Floyd — The Dark Side of the Moon&quot;,
-      &quot;format&quot;: &quot;vinyl&quot;,
-      &quot;isLimited&quot;: false,
-      &quot;isPreorder&quot;: false,
-      &quot;isActive&quot;: true,
-      &quot;coverUrl&quot;: &quot;https://...&quot;,
-      &quot;artist&quot;: { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Pink Floyd&quot; },
-      &quot;minPrice&quot;: 1200000,
-      &quot;maxPrice&quot;: 2500000,
-      &quot;inStock&quot;: true
+      "id": "uuid",
+      "name": "Pink Floyd — The Dark Side of the Moon",
+      "format": "vinyl",
+      "isLimited": false,
+      "isPreorder": false,
+      "isActive": true,
+      "coverUrl": "https://...",
+      "artist": { "id": "uuid", "name": "Pink Floyd" },
+      "minPrice": 1200000,
+      "maxPrice": 2500000,
+      "inStock": true
     }
   ],
-  &quot;meta&quot;: { &quot;pageNumber&quot;: 1, &quot;pageSize&quot;: 20, &quot;maxPage&quot;: 10, &quot;totalCount&quot;: 180 }
-}
-```
+  "meta": { "pageNumber": 1, "pageSize": 20, "maxPage": 10, "totalCount": 180 }
+}</code></pre>
 
-&gt; `min_price` and `max_price` are calculated from the list of variants. `in_stock` = true when at least 1 variant has `stock_qty &gt; 0`.
+            <blockquote>
+              <code>min_price</code> and <code>max_price</code> are calculated from the list of variants. <code>in_stock</code> = true when at least 1 variant has <code>stock_qty > 0</code>.
+            </blockquote>
 
----
+            <hr>
 
-### `GET /api/v1/products/{slug}`
-
-Product details with release information.
-
-**Auth:** Public
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;id&quot;: &quot;uuid&quot;,
-    &quot;name&quot;: &quot;Pink Floyd — The Dark Side of the Moon (Japan OBI)&quot;,
-    &quot;slug&quot;: &quot;pink-floyd-dark-side-japan-obi&quot;,
-    &quot;description&quot;: &quot;...&quot;,
-    &quot;format&quot;: &quot;vinyl&quot;,
-    &quot;isLimited&quot;: true,
-    &quot;limitedQty&quot;: 50,
-    &quot;isPreorder&quot;: false,
-    &quot;price&quot;: 1200000,
-    &quot;stockQty&quot;: 10,
-    &quot;isAvailable&quot;: true,
-    &quot;isSigned&quot;: false,
-    &quot;artist&quot;: { &quot;id&quot;: &quot;uuid&quot;, &quot;name&quot;: &quot;Pink Floyd&quot; },
-    &quot;vinylAttributes&quot;: {
-      &quot;discColor&quot;: &quot;black&quot;,
-      &quot;weightGrams&quot;: &quot;140&quot;,
-      &quot;speedRpm&quot;: &quot;33&quot;,
-      &quot;discCount&quot;: &quot;1lp&quot;,
-      &quot;sleeveType&quot;: &quot;standard&quot;
+            <h3><code>GET /api/v1/products/{slug}</code></h3>
+            <p>Product details with release information.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Pink Floyd — The Dark Side of the Moon (Japan OBI)",
+    "slug": "pink-floyd-dark-side-japan-obi",
+    "description": "...",
+    "format": "vinyl",
+    "isLimited": true,
+    "limitedQty": 50,
+    "isPreorder": false,
+    "price": 1200000,
+    "stockQty": 10,
+    "isAvailable": true,
+    "isSigned": false,
+    "artist": { "id": "uuid", "name": "Pink Floyd" },
+    "vinylAttributes": {
+      "discColor": "black",
+      "weightGrams": "140",
+      "speedRpm": "33",
+      "discCount": "1lp",
+      "sleeveType": "standard"
     }
   }
-}
-```
+}</code></pre>
+
+            <hr>
 
----
+            <h3><code>GET /api/v1/products/{id}</code></h3>
+            <p>Product details by ID. This route is constrained to GUIDs in the controller and shares the same response shape as <code>GET /api/v1/products/{slug}</code>.</p>
+            <p><strong>Auth:</strong> Public</p>
 
-### `GET /api/v1/products/{id}`
+            <hr>
 
-Product details by ID. This route is constrained to GUIDs in the controller and shares the same response shape as `GET /api/v1/products/{slug}`.
+            <h3><code>POST /api/v1/products</code></h3>
+            <p>Create a new product from a release_version.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "releaseVersionId": "uuid",
+  "name": "Pink Floyd — The Dark Side of the Moon (Japan OBI)",
+  "description": "...",
+  "isLimited": true,
+  "limitedQty": 50,
+  "isPreorder": false
+}</code></pre>
+            <p><strong>Response <code>201</code>:</strong> Returns the created product object (without variants yet).</p>
 
-**Auth:** Public
+            <hr>
+
+            <h3><code>PATCH /api/v1/products/{id}</code></h3>
+            <p>Update product information.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "slug": "...",
+  "description": "...",
+  "isActive": true,
+  "isPreorder": false,
+  "price": 1200000,
+  "stockQty": 10,
+  "vinylAttributes": { ... }
+}</code></pre>
 
----
+            <hr>
+
+            <h3><code>DELETE /api/v1/products/{id}</code></h3>
+            <p>Deactivate product (set <code>isActive = false</code>).</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Response <code>204</code>:</strong></p>
 
-### `POST /api/v1/products`
+            <hr>
 
-Create a new product from a release_version.
+            <h3><code>GET /api/v1/curatedcollections</code></h3>
+            <p>List of themed collections.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Query params:</strong> <code>includeUnpublished</code>, <code>pageNumber</code>, <code>pageSize</code>, <code>searchQuery</code></p>
 
-**Auth:** Admin
+            <hr>
 
-**Request body:**
-```json
-{
-  &quot;releaseVersionId&quot;: &quot;uuid&quot;,
-  &quot;name&quot;: &quot;Pink Floyd — The Dark Side of the Moon (Japan OBI)&quot;,
-  &quot;description&quot;: &quot;...&quot;,
-  &quot;isLimited&quot;: true,
-  &quot;limitedQty&quot;: 50,
-  &quot;isPreorder&quot;: false
-}
-```
+            <h3><code>GET /api/v1/curatedcollections/featured</code></h3>
+            <p>Get a list of featured collections for the homepage.</p>
+            <p><strong>Auth:</strong> Public</p>
 
-**Response `201`:** Returns the created product object (without variants yet).
-
----
-
-### `PATCH /api/v1/products/{id}`
-
-Update product information.
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;slug&quot;: &quot;...&quot;,
-  &quot;description&quot;: &quot;...&quot;,
-  &quot;isActive&quot;: true,
-  &quot;isPreorder&quot;: false,
-  &quot;price&quot;: 1200000,
-  &quot;stockQty&quot;: 10,
-  &quot;vinylAttributes&quot;: { ... }
-}
-```
-
----
-
-### `DELETE /api/v1/products/{id}`
-
-Deactivate product (set `isActive = false`).
-
-**Auth:** Admin
-
-**Response `204`:**
-
----
-
-### `GET /api/v1/curatedcollections`
-
-List of themed collections.
-
-**Auth:** Public
-
-**Query params:** `includeUnpublished`, `pageNumber`, `pageSize`, `searchQuery`
-
----
-
-### `GET /api/v1/curatedcollections/featured`
-
-Get a list of featured collections for the homepage.
-
-**Auth:** Public
-
----
-
-### `GET /api/v1/curatedcollections/{id}`
-
-Collection details.
-
-**Auth:** Public
-
----
-
-### `POST /api/v1/curatedcollections`
-
-Create a new collection.
-
-**Auth:** Admin
-
----
-
-### `PATCH /api/v1/curatedcollections/{id}`
-
-Update collection information.
-
-**Auth:** Admin
-
----
-
-### `PUT /api/v1/curatedcollections/{id}/status`
-
-Update display status (isPublished).
-
-**Auth:** Admin
-
----
-
-### `POST /api/v1/curatedcollections/{id}/items`
-
-Add a product to the collection.
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;productId&quot;: &quot;uuid&quot;,
-  &quot;sortOrder&quot;: 1
-}
-```
-
----
-
-### `DELETE /api/v1/curatedcollections/{id}/items/{productId}`
-
-Remove a product from the collection.
-
-**Auth:** Admin
-
----
-
-### `DELETE /api/v1/curatedcollections/{id}`
-
-Delete collection.
-
-**Auth:** Admin
-
----
-
-## Section 4 — Cart
-
-### `GET /api/v1/cart`
-
-Get the current user&#39;s cart.
-
-**Auth:** Customer
-
----
-
-### `POST /api/v1/cart/items`
-
-Add a product to the cart.
-
-**Auth:** Customer
-
-**Request body:**
-```json
-{
-  &quot;productId&quot;: &quot;uuid&quot;,
-  &quot;quantity&quot;: 1
-}
-```
-
-**Response `200`:** Returns the ID of the newly added/updated item record.
-
----
-
-### `PUT /api/v1/cart/items/{id}`
-
-Update product quantity in the cart.
-
-**Auth:** Customer
-
-**Request body:**
-```json
-{
-  &quot;quantity&quot;: 3
-}
-```
-
----
-
-### `DELETE /api/v1/cart/items/{id}`
-
-Remove a product from the cart.
-
-**Auth:** Customer
-
----
-
-### `DELETE /api/v1/cart`
-
-Clear the entire cart.
-
-**Auth:** Customer
-
----
-
-## Section 5 — Orders
-
-### `POST /api/v1/orders`
-
-Create an order from the current cart. Performed within a single database transaction.
-
-**Auth:** Customer
-
-**Request body:**
-```json
-{
-  &quot;shippingAddress&quot;: &quot;123 Nguyen Hue, Q1, TP.HCM&quot;,
-  &quot;recipientName&quot;: &quot;John Doe&quot;,
-  &quot;phone&quot;: &quot;0901234567&quot;,
-  &quot;paymentMethod&quot;: &quot;stripe&quot;
-}
-```
-
-**Internal Logic (service layer):**
-
-1. Check `stock_qty` sufficiency for each variant
-2. If `is_preorder = true`, skip stock deduction until `preorder_release_date`
-3. Snapshot price into `order_items.unit_price`
-4. Snapshot shipping information into `orders`
-5. Calculate `total_amount` from `order_items`
-6. Deduct `stock_qty` (if not a preorder)
-7. Clear items from the cart
-8. Create a `payments` record with `status = pending`
-9. Trigger `order_created` email sending
-
-**Response `201`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;order&quot;: {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;status&quot;: &quot;pending&quot;,
-      &quot;totalAmount&quot;: 2400000,
-      &quot;createdAt&quot;: &quot;2024-01-15T10:00:00Z&quot;
+            <hr>
+
+            <h3><code>GET /api/v1/curatedcollections/{id}</code></h3>
+            <p>Collection details.</p>
+            <p><strong>Auth:</strong> Public</p>
+
+            <hr>
+
+            <h3><code>POST /api/v1/curatedcollections</code></h3>
+            <p>Create a new collection.</p>
+            <p><strong>Auth:</strong> Admin</p>
+
+            <hr>
+
+            <h3><code>PATCH /api/v1/curatedcollections/{id}</code></h3>
+            <p>Update collection information.</p>
+            <p><strong>Auth:</strong> Admin</p>
+
+            <hr>
+
+            <h3><code>PUT /api/v1/curatedcollections/{id}/status</code></h3>
+            <p>Update display status (isPublished).</p>
+            <p><strong>Auth:</strong> Admin</p>
+
+            <hr>
+
+            <h3><code>POST /api/v1/curatedcollections/{id}/items</code></h3>
+            <p>Add a product to the collection.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "productId": "uuid",
+  "sortOrder": 1
+}</code></pre>
+
+            <hr>
+
+            <h3><code>DELETE /api/v1/curatedcollections/{id}/items/{productId}</code></h3>
+            <p>Remove a product from the collection.</p>
+            <p><strong>Auth:</strong> Admin</p>
+
+            <hr>
+
+            <h3><code>DELETE /api/v1/curatedcollections/{id}</code></h3>
+            <p>Delete collection.</p>
+            <p><strong>Auth:</strong> Admin</p>
+
+            <hr>
+
+            <h2>Section 4 — Cart</h2>
+
+            <h3><code>GET /api/v1/cart</code></h3>
+            <p>Get the current user's cart.</p>
+            <p><strong>Auth:</strong> Customer</p>
+
+            <hr>
+
+            <h3><code>POST /api/v1/cart/items</code></h3>
+            <p>Add a product to the cart.</p>
+            <p><strong>Auth:</strong> Customer</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "productId": "uuid",
+  "quantity": 1
+}</code></pre>
+            <p><strong>Response <code>200</code>:</strong> Returns the ID of the newly added/updated item record.</p>
+
+            <hr>
+
+            <h3><code>PUT /api/v1/cart/items/{id}</code></h3>
+            <p>Update product quantity in the cart.</p>
+            <p><strong>Auth:</strong> Customer</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "quantity": 3
+}</code></pre>
+
+            <hr>
+
+            <h3><code>DELETE /api/v1/cart/items/{id}</code></h3>
+            <p>Remove a product from the cart.</p>
+            <p><strong>Auth:</strong> Customer</p>
+
+            <hr>
+
+            <h3><code>DELETE /api/v1/cart</code></h3>
+            <p>Clear the entire cart.</p>
+            <p><strong>Auth:</strong> Customer</p>
+
+            <hr>
+
+            <h2>Section 5 — Orders</h2>
+
+            <h3><code>POST /api/v1/orders</code></h3>
+            <p>Create an order from the current cart. Performed within a single database transaction.</p>
+            <p><strong>Auth:</strong> Customer</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "shippingAddress": "123 Nguyen Hue, Q1, TP.HCM",
+  "recipientName": "John Doe",
+  "phone": "0901234567",
+  "paymentMethod": "stripe"
+}</code></pre>
+
+            <p><strong>Internal Logic (service layer):</strong></p>
+            <ol>
+              <li>Check <code>stock_qty</code> sufficiency for each variant</li>
+              <li>If <code>is_preorder = true</code>, skip stock deduction until <code>preorder_release_date</code></li>
+              <li>Snapshot price into <code>order_items.unit_price</code></li>
+              <li>Snapshot shipping information into <code>orders</code></li>
+              <li>Calculate <code>total_amount</code> from <code>order_items</code></li>
+              <li>Deduct <code>stock_qty</code> (if not a preorder)</li>
+              <li>Clear items from the cart</li>
+              <li>Create a <code>payments</code> record with <code>status = pending</code></li>
+              <li>Trigger <code>order_created</code> email sending</li>
+            </ol>
+
+            <p><strong>Response <code>201</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "order": {
+      "id": "uuid",
+      "status": "pending",
+      "totalAmount": 2400000,
+      "createdAt": "2024-01-15T10:00:00Z"
     },
-    &quot;payment&quot;: {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;method&quot;: &quot;stripe&quot;,
-      &quot;status&quot;: &quot;pending&quot;,
-      &quot;stripeCheckoutUrl&quot;: &quot;https://checkout.stripe.com/...&quot;
+    "payment": {
+      "id": "uuid",
+      "method": "stripe",
+      "status": "pending",
+      "stripeCheckoutUrl": "https://checkout.stripe.com/..."
     }
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-### `GET /api/v1/orders`
+            <h3><code>GET /api/v1/orders</code></h3>
+            <p>Current user's order history.</p>
+            <p><strong>Auth:</strong> Customer</p>
+            <p><strong>Query params:</strong> <code>status</code>, <code>page</code>, <code>limit</code></p>
 
-Current user&#39;s order history.
-
-**Auth:** Customer
-
-**Query params:** `status`, `page`, `limit`
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: [
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": [
     {
-      &quot;id&quot;: &quot;uuid&quot;,
-      &quot;status&quot;: &quot;completed&quot;,
-      &quot;totalAmount&quot;: 2400000,
-      &quot;createdAt&quot;: &quot;2024-01-15T10:00:00Z&quot;,
-      &quot;itemCount&quot;: 2
+      "id": "uuid",
+      "status": "completed",
+      "totalAmount": 2400000,
+      "createdAt": "2024-01-15T10:00:00Z",
+      "itemCount": 2
     }
   ],
-  &quot;meta&quot;: { &quot;pageNumber&quot;: 1, &quot;pageSize&quot;: 20, &quot;maxPage&quot;: 1, &quot;totalCount&quot;: 5 }
-}
-```
+  "meta": { "pageNumber": 1, "pageSize": 20, "maxPage": 1, "totalCount": 5 }
+}</code></pre>
 
----
+            <hr>
 
-### `GET /api/v1/orders/{id}`
+            <h3><code>GET /api/v1/orders/{id}</code></h3>
+            <p>Order details including order items and payment information.</p>
+            <p><strong>Auth:</strong> Customer (view own orders only), Admin (view all)</p>
 
-Order details including order items and payment information.
-
-**Auth:** Customer (view own orders only), Admin (view all)
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;id&quot;: &quot;uuid&quot;,
-    &quot;status&quot;: &quot;shipped&quot;,
-    &quot;shippingAddress&quot;: &quot;123 Nguyen Hue, Q1, TP.HCM&quot;,
-    &quot;recipientName&quot;: &quot;John Doe&quot;,
-    &quot;phone&quot;: &quot;0901234567&quot;,
-    &quot;totalAmount&quot;: 2400000,
-    &quot;trackingNumber&quot;: &quot;VN123456789&quot;,
-    &quot;createdAt&quot;: &quot;2024-01-15T10:00:00Z&quot;,
-    &quot;items&quot;: [
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "status": "shipped",
+    "shippingAddress": "123 Nguyen Hue, Q1, TP.HCM",
+    "recipientName": "John Doe",
+    "phone": "0901234567",
+    "totalAmount": 2400000,
+    "trackingNumber": "VN123456789",
+    "createdAt": "2024-01-15T10:00:00Z",
+    "items": [
       {
-        &quot;id&quot;: &quot;uuid&quot;,
-        &quot;quantity&quot;: 2,
-        &quot;unitPrice&quot;: 1200000,
-        &quot;subtotal&quot;: 2400000,
-        &quot;variant&quot;: {
-          &quot;id&quot;: &quot;uuid&quot;,
-          &quot;variantName&quot;: &quot;Black 140g Standard&quot;,
-          &quot;product&quot;: {
-            &quot;id&quot;: &quot;uuid&quot;,
-            &quot;name&quot;: &quot;Pink Floyd — The Dark Side of the Moon&quot;,
-            &quot;coverUrl&quot;: &quot;https://...&quot;
+        "id": "uuid",
+        "quantity": 2,
+        "unitPrice": 1200000,
+        "subtotal": 2400000,
+        "variant": {
+          "id": "uuid",
+          "variantName": "Black 140g Standard",
+          "product": {
+            "id": "uuid",
+            "name": "Pink Floyd — The Dark Side of the Moon",
+            "coverUrl": "https://..."
           }
         }
       }
     ],
-    &quot;payment&quot;: {
-      &quot;method&quot;: &quot;vnpay&quot;,
-      &quot;status&quot;: &quot;success&quot;,
-      &quot;paidAt&quot;: &quot;2024-01-15T10:05:00Z&quot;
+    "payment": {
+      "method": "vnpay",
+      "status": "success",
+      "paidAt": "2024-01-15T10:05:00Z"
     }
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-### `POST /api/v1/orders/{id}/cancel`
+            <h3><code>POST /api/v1/orders/{id}/cancel</code></h3>
+            <p>Cancel an order.</p>
+            <p><strong>Auth:</strong> Customer, Admin</p>
+            <p><strong>Response <code>204</code>:</strong></p>
 
-Cancel an order.
+            <hr>
 
-**Auth:** Customer, Admin
+            <h3><code>GET /api/v1/admin/orders</code></h3>
+            <p>Admin view of all orders in the system.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Query params:</strong> <code>status</code>, <code>userId</code>, <code>pageNumber</code>, <code>pageSize</code></p>
 
-**Response `204`:**
+            <hr>
 
----
+            <h3><code>PATCH /api/v1/admin/orders/{id}/status</code></h3>
+            <p>Admin updates order status.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong></p>
+            <pre><code>{
+  "status": "shipped",
+  "trackingNumber": "VN123456789"
+}</code></pre>
 
-### `GET /api/v1/admin/orders`
+            <hr>
 
-Admin view of all orders in the system.
+            <h2>Section 6 — Payment</h2>
+            <p>Stripe Checkout Session creation is handled by <code>POST /api/v1/orders</code>. There is no standalone <code>create-session</code> endpoint in the current API.</p>
 
-**Auth:** Admin
+            <h3><code>POST /api/v1/payments/stripe/webhook</code></h3>
+            <p>Stripe Webhook — server-to-server notification. Verify <code>Stripe-Signature</code> signature and update order status.</p>
+            <p><strong>Auth:</strong> Public (Verify using Stripe Webhook Secret)</p>
+            <p><strong>Response <code>204</code>:</strong></p>
 
-**Query params:** `status`, `userId`, `pageNumber`, `pageSize`
+            <hr>
 
----
-
-### `PATCH /api/v1/admin/orders/{id}/status`
-
-Admin updates order status.
-
-**Auth:** Admin
-
-**Request body:**
-```json
-{
-  &quot;status&quot;: &quot;shipped&quot;,
-  &quot;trackingNumber&quot;: &quot;VN123456789&quot;
-}
-```
-
-
----
-
-## Section 6 — Payment
-
-Stripe Checkout Session creation is handled by `POST /api/v1/orders`. There is no standalone `create-session` endpoint in the current API.
-
-### `POST /api/v1/payments/stripe/webhook`
-
-Stripe Webhook — server-to-server notification. Verify `Stripe-Signature` signature and update order status.
-
-**Auth:** Public (Verify using Stripe Webhook Secret)
-
-**Response `204`:**
-
----
-
-## Section 7 — Catalog Search
-
-### `GET /api/v1/catalog/search`
-
-Search for artists and releases by keyword.
-
-**Auth:** Public
-
-**Query params:** `q` (keyword)
-
-**Response `200`:**
-```json
-{
-  &quot;success&quot;: true,
-  &quot;data&quot;: {
-    &quot;artists&quot;: [...],
-    &quot;releases&quot;: [...]
+            <h2>Section 7 — Catalog Search</h2>
+            <h3><code>GET /api/v1/catalog/search</code></h3>
+            <p>Search for artists and releases by keyword.</p>
+            <p><strong>Auth:</strong> Public</p>
+            <p><strong>Query params:</strong> <code>q</code> (keyword)</p>
+            <p><strong>Response <code>200</code>:</strong></p>
+            <pre><code>{
+  "success": true,
+  "data": {
+    "artists": [...],
+    "releases": [...]
   }
-}
-```
+}</code></pre>
 
----
+            <hr>
 
-## Section 8 — Uploads
+            <h2>Section 8 — Uploads</h2>
+            <h3><code>POST /api/v1/uploads/image</code></h3>
+            <p>Upload images to the server.</p>
+            <p><strong>Auth:</strong> Admin</p>
+            <p><strong>Request body:</strong> <code>multipart/form-data</code> with <code>file</code> and <code>folder</code>.</p>
+            <p><strong>Response <code>200</code>:</strong> Returns the URL of the image.</p>
 
-### `POST /api/v1/uploads/image`
+            <hr>
 
-Upload images to the server.
-
-**Auth:** Admin
-
-**Request body:** `multipart/form-data` with `file` and `folder`.
-
-**Response `200`:** Returns the URL of the image.
-
----
-
-## Summary Table
-
-| # | Method | Endpoint | Auth |
-|---|---|---|---|
-| 1 | POST | `/api/v1/auth/register` | Public |
-| 2 | POST | `/api/v1/auth/login` | Public |
-| 3 | POST | `/api/v1/auth/google-login` | Public |
-| 4 | POST | `/api/v1/auth/refresh` | Public |
-| 5 | GET | `/api/v1/auth/me` | Authenticated |
-| 6 | POST | `/api/v1/auth/logout` | Public route; refresh cookie required |
-| 7 | POST | `/api/v1/auth/change-password` | Authenticated |
-| 8 | GET | `/api/v1/artists` | Public |
-| 9 | GET | `/api/v1/artists/{slug}` | Public |
-| 10 | POST | `/api/v1/artists` | Admin |
-| 11 | PUT | `/api/v1/artists/{id}` | Admin |
-| 12 | DELETE | `/api/v1/artists/{id}` | Admin |
-| 13 | GET | `/api/v1/genres` | Public |
-| 14 | GET | `/api/v1/genres/{slug}` | Public |
-| 15 | POST | `/api/v1/genres` | Admin |
-| 16 | PUT | `/api/v1/genres/{id}` | Admin |
-| 17 | DELETE | `/api/v1/genres/{id}` | Admin |
-| 18 | GET | `/api/v1/releases` | Public |
-| 19 | GET | `/api/v1/releases/{slug}` | Public |
-| 20 | POST | `/api/v1/releases` | Admin |
-| 21 | PUT | `/api/v1/releases/{id}` | Admin |
-| 22 | DELETE | `/api/v1/releases/{id}` | Admin |
-| 23 | GET | `/api/v1/releaseversions/by-release/{releaseId}` | Public |
-| 24 | GET | `/api/v1/releaseversions/formats` | Public |
-| 25 | POST | `/api/v1/releaseversions` | Admin |
-| 26 | PUT | `/api/v1/releaseversions/{id}` | Admin |
-| 27 | DELETE | `/api/v1/releaseversions/{id}` | Admin |
-| 28 | GET | `/api/v1/labels` | Public |
-| 29 | GET | `/api/v1/labels/{slug}` | Public |
-| 30 | POST | `/api/v1/labels` | Admin |
-| 31 | PUT | `/api/v1/labels/{id}` | Admin |
-| 32 | DELETE | `/api/v1/labels/{id}` | Admin |
-| 33 | GET | `/api/v1/products` | Public |
-| 34 | GET | `/api/v1/products/{slug}` | Public |
-| 35 | GET | `/api/v1/products/{id}` | Public |
-| 36 | POST | `/api/v1/products` | Admin |
-| 37 | PATCH | `/api/v1/products/{id}` | Admin |
-| 38 | DELETE | `/api/v1/products/{id}` | Admin |
-| 39 | GET | `/api/v1/curatedcollections` | Public |
-| 40 | GET | `/api/v1/curatedcollections/featured` | Public |
-| 41 | GET | `/api/v1/curatedcollections/{id}` | Public |
-| 42 | POST | `/api/v1/curatedcollections` | Admin |
-| 43 | PATCH | `/api/v1/curatedcollections/{id}` | Admin |
-| 44 | PUT | `/api/v1/curatedcollections/{id}/status` | Admin |
-| 45 | POST | `/api/v1/curatedcollections/{id}/items` | Admin |
-| 46 | DELETE | `/api/v1/curatedcollections/{id}/items/{productId}` | Admin |
-| 47 | DELETE | `/api/v1/curatedcollections/{id}` | Admin |
-| 48 | GET | `/api/v1/cart` | Authenticated |
-| 49 | POST | `/api/v1/cart/items` | Authenticated |
-| 50 | PUT | `/api/v1/cart/items/{id}` | Authenticated |
-| 51 | DELETE | `/api/v1/cart/items/{id}` | Authenticated |
-| 52 | DELETE | `/api/v1/cart` | Authenticated |
-| 53 | GET | `/api/v1/orders` | Authenticated |
-| 54 | GET | `/api/v1/orders/{id}` | Authenticated |
-| 55 | POST | `/api/v1/orders` | Authenticated |
-| 56 | POST | `/api/v1/orders/{id}/cancel` | Authenticated |
-| 57 | GET | `/api/v1/admin/orders` | Admin |
-| 58 | PATCH | `/api/v1/admin/orders/{id}/status` | Admin |
-| 59 | POST | `/api/v1/payments/stripe/webhook` | Public |
-| 60 | GET | `/api/v1/catalog/search` | Public |
-| 61 | POST | `/api/v1/uploads/image` | Admin |
-
-**Total: 61 endpoints**
-</pre>
-          </article>
+            <h2>Summary Table</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Method</th>
+                  <th>Endpoint</th>
+                  <th>Auth</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>POST</td><td><code>/api/v1/auth/register</code></td><td>Public</td></tr>
+                <tr><td>2</td><td>POST</td><td><code>/api/v1/auth/login</code></td><td>Public</td></tr>
+                <tr><td>3</td><td>POST</td><td><code>/api/v1/auth/google-login</code></td><td>Public</td></tr>
+                <tr><td>4</td><td>POST</td><td><code>/api/v1/auth/refresh</code></td><td>Public</td></tr>
+                <tr><td>5</td><td>GET</td><td><code>/api/v1/auth/me</code></td><td>Authenticated</td></tr>
+                <tr><td>6</td><td>POST</td><td><code>/api/v1/auth/logout</code></td><td>Public route; refresh cookie required</td></tr>
+                <tr><td>7</td><td>POST</td><td><code>/api/v1/auth/change-password</code></td><td>Authenticated</td></tr>
+                <tr><td>8</td><td>GET</td><td><code>/api/v1/artists</code></td><td>Public</td></tr>
+                <tr><td>9</td><td>GET</td><td><code>/api/v1/artists/{slug}</code></td><td>Public</td></tr>
+                <tr><td>10</td><td>POST</td><td><code>/api/v1/artists</code></td><td>Admin</td></tr>
+                <tr><td>11</td><td>PUT</td><td><code>/api/v1/artists/{id}</code></td><td>Admin</td></tr>
+                <tr><td>12</td><td>DELETE</td><td><code>/api/v1/artists/{id}</code></td><td>Admin</td></tr>
+                <tr><td>13</td><td>GET</td><td><code>/api/v1/genres</code></td><td>Public</td></tr>
+                <tr><td>14</td><td>GET</td><td><code>/api/v1/genres/{slug}</code></td><td>Public</td></tr>
+                <tr><td>15</td><td>POST</td><td><code>/api/v1/genres</code></td><td>Admin</td></tr>
+                <tr><td>16</td><td>PUT</td><td><code>/api/v1/genres/{id}</code></td><td>Admin</td></tr>
+                <tr><td>17</td><td>DELETE</td><td><code>/api/v1/genres/{id}</code></td><td>Admin</td></tr>
+                <tr><td>18</td><td>GET</td><td><code>/api/v1/releases</code></td><td>Public</td></tr>
+                <tr><td>19</td><td>GET</td><td><code>/api/v1/releases/{slug}</code></td><td>Public</td></tr>
+                <tr><td>20</td><td>POST</td><td><code>/api/v1/releases</code></td><td>Admin</td></tr>
+                <tr><td>21</td><td>PUT</td><td><code>/api/v1/releases/{id}</code></td><td>Admin</td></tr>
+                <tr><td>22</td><td>DELETE</td><td><code>/api/v1/releases/{id}</code></td><td>Admin</td></tr>
+                <tr><td>23</td><td>GET</td><td><code>/api/v1/releaseversions/by-release/{releaseId}</code></td><td>Public</td></tr>
+                <tr><td>24</td><td>GET</td><td><code>/api/v1/releaseversions/formats</code></td><td>Public</td></tr>
+                <tr><td>25</td><td>POST</td><td><code>/api/v1/releaseversions</code></td><td>Admin</td></tr>
+                <tr><td>26</td><td>PUT</td><td><code>/api/v1/releaseversions/{id}</code></td><td>Admin</td></tr>
+                <tr><td>27</td><td>DELETE</td><td><code>/api/v1/releaseversions/{id}</code></td><td>Admin</td></tr>
+                <tr><td>28</td><td>GET</td><td><code>/api/v1/labels</code></td><td>Public</td></tr>
+                <tr><td>29</td><td>GET</td><td><code>/api/v1/labels/{slug}</code></td><td>Public</td></tr>
+                <tr><td>30</td><td>POST</td><td><code>/api/v1/labels</code></td><td>Admin</td></tr>
+                <tr><td>31</td><td>PUT</td><td><code>/api/v1/labels/{id}</code></td><td>Admin</td></tr>
+                <tr><td>32</td><td>DELETE</td><td><code>/api/v1/labels/{id}</code></td><td>Admin</td></tr>
+                <tr><td>33</td><td>GET</td><td><code>/api/v1/products</code></td><td>Public</td></tr>
+                <tr><td>34</td><td>GET</td><td><code>/api/v1/products/{slug}</code></td><td>Public</td></tr>
+                <tr><td>35</td><td>GET</td><td><code>/api/v1/products/{id}</code></td><td>Public</td></tr>
+                <tr><td>36</td><td>POST</td><td><code>/api/v1/products</code></td><td>Admin</td></tr>
+                <tr><td>37</td><td>PATCH</td><td><code>/api/v1/products/{id}</code></td><td>Admin</td></tr>
+                <tr><td>38</td><td>DELETE</td><td><code>/api/v1/products/{id}</code></td><td>Admin</td></tr>
+                <tr><td>39</td><td>GET</td><td><code>/api/v1/curatedcollections</code></td><td>Public</td></tr>
+                <tr><td>40</td><td>GET</td><td><code>/api/v1/curatedcollections/featured</code></td><td>Public</td></tr>
+                <tr><td>41</td><td>GET</td><td><code>/api/v1/curatedcollections/{id}</code></td><td>Public</td></tr>
+                <tr><td>42</td><td>POST</td><td><code>/api/v1/curatedcollections</code></td><td>Admin</td></tr>
+                <tr><td>43</td><td>PATCH</td><td><code>/api/v1/curatedcollections/{id}</code></td><td>Admin</td></tr>
+                <tr><td>44</td><td>PUT</td><td><code>/api/v1/curatedcollections/{id}/status</code></td><td>Admin</td></tr>
+                <tr><td>45</td><td>POST</td><td><code>/api/v1/curatedcollections/{id}/items</code></td><td>Admin</td></tr>
+                <tr><td>46</td><td>DELETE</td><td><code>/api/v1/curatedcollections/{id}/items/{productId}</code></td><td>Admin</td></tr>
+                <tr><td>47</td><td>DELETE</td><td><code>/api/v1/curatedcollections/{id}</code></td><td>Admin</td></tr>
+                <tr><td>48</td><td>GET</td><td><code>/api/v1/cart</code></td><td>Authenticated</td></tr>
+                <tr><td>49</td><td>POST</td><td><code>/api/v1/cart/items</code></td><td>Authenticated</td></tr>
+                <tr><td>50</td><td>PUT</td><td><code>/api/v1/cart/items/{id}</code></td><td>Authenticated</td></tr>
+                <tr><td>51</td><td>DELETE</td><td><code>/api/v1/cart/items/{id}</code></td><td>Authenticated</td></tr>
+                <tr><td>52</td><td>DELETE</td><td><code>/api/v1/cart</code></td><td>Authenticated</td></tr>
+                <tr><td>53</td><td>GET</td><td><code>/api/v1/orders</code></td><td>Authenticated</td></tr>
+                <tr><td>54</td><td>GET</td><td><code>/api/v1/orders/{id}</code></td><td>Authenticated</td></tr>
+                <tr><td>55</td><td>POST</td><td><code>/api/v1/orders</code></td><td>Authenticated</td></tr>
+                <tr><td>56</td><td>POST</td><td><code>/api/v1/orders/{id}/cancel</code></td><td>Authenticated</td></tr>
+                <tr><td>57</td><td>GET</td><td><code>/api/v1/admin/orders</code></td><td>Admin</td></tr>
+                <tr><td>58</td><td>PATCH</td><td><code>/api/v1/admin/orders/{id}/status</code></td><td>Admin</td></tr>
+                <tr><td>59</td><td>POST</td><td><code>/api/v1/payments/stripe/webhook</code></td><td>Public</td></tr>
+                <tr><td>60</td><td>GET</td><td><code>/api/v1/catalog/search</code></td><td>Public</td></tr>
+                <tr><td>61</td><td>POST</td><td><code>/api/v1/uploads/image</code></td><td>Admin</td></tr>
+              </tbody>
+            </table>
+            <p><strong>Total: 61 endpoints</strong></p>
+          </div>
         </div>
       </section>
     </main>
