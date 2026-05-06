@@ -2,5 +2,8 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "quygdb",
 	"compatibility_date": "2026-02-23",
-	"pages_build_output_dir": "./src"
+	"pages_build_output_dir": "./src",
+	"dev": {
+		"port": 8788
+	}
 }

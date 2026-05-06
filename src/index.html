@@ -5,9 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/png" href="assets/favicon.jpg" />
-    <title>Trịnh Quý 🌲</title>
-    <meta name="keywords" content="Unity, Trịnh Quý, Game Developer, DOTS, HLSL" />
-    <meta name="description" content="Trịnh Quý 🌲 | Unity Enthusiast & High-Performance Programming" />
+    <title>Trinh Xuan Quy | .NET Software Engineer</title>
+    <meta name="keywords" content=".NET, ASP.NET Core, C#, React, PostgreSQL, Unity, Software Engineer, Trinh Xuan Quy" />
+    <meta name="description" content="Trinh Xuan Quy | .NET Software Engineer in Ho Chi Minh City" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,8 @@
         <div class="nav-links">
           <a href="#about" class="nav-item active">ABOUT ME</a>
           <a href="#projects" class="nav-item">PROJECTS</a>
-          <a href="https://trinhquy.pages.dev/" class="nav-item">PORTFOLIO 3D</a>
+          <a href="#experience" class="nav-item">EXPERIENCE</a>
+          <a href="#skills" class="nav-item">SKILLS</a>
           <a href="assets/TrinhXuanQuy_CV.pdf" target="_blank" class="nav-item">RESUME</a>
         </div>
         <div class="nav-right">
@@ -42,10 +43,16 @@
           <span class="accent-text-glow">TRỊNH XUÂN QUÝ</span>
         </h1>
         <p class="hero-subtext">
-          UNITY DEVELOPER
+          .NET SOFTWARE ENGINEER
         </p>
+        <div class="hero-contact">
+          <a href="mailto:trinhxuanquy2k3@gmail.com">trinhxuanquy2k3@gmail.com</a>
+          <span>Ho Chi Minh City</span>
+          <a href="tel:+84822601505">0822601505</a>
+        </div>
         <div class="hero-cta">
-          <a class="btn-primary" href="#about">Know more</a>
+          <a class="btn-primary" href="#projects">View projects</a>
+          <a class="btn-secondary" href="assets/TrinhXuanQuy_CV.pdf" target="_blank">Download CV</a>
         </div>
       </div>
     </section>
@@ -57,7 +64,11 @@
         <div class="about-content">
           <div class="about-info">
             <p class="about-text">
-              With 1 year of Unity experience, my primary goal for 2026 is to dive deep into high-performance programming with Unity DOTS, Compute/HLSL Shaders in Unity, and modern UI development using UI Toolkit.
+              Former game developer transitioning into traditional software engineering, with hands-on C# experience,
+              production Unity engineering background, and a growing focus on backend architecture. I am now building
+              full-stack systems with ASP.NET Core, Entity Framework Core, PostgreSQL, React, Docker, and AWS, while
+              carrying forward the performance mindset I developed from gameplay, rendering, asset loading, and mobile
+              optimization work.
             </p>
           </div>
         </div>
@@ -70,18 +81,72 @@
         <h2 class="section-heading">Highlight Projects</h2>
 
         <div class="projects-list">
+          <article id="cat-music-shop" class="project-card featured-project">
+            <div class="project-content">
+              <p class="project-kicker">Full-Stack E-Commerce Music Store</p>
+              <h3 class="project-title">Cat Music Shop</h3>
+              <p>
+                A full-stack music e-commerce platform with catalog browsing, product management, cart, checkout,
+                order history, and admin workflows.
+              </p>
+              <ul class="project-points">
+                <li>Designed a Clean Architecture backend with ASP.NET Core Web API, Domain/Application/Infrastructure layers, MediatR, FluentValidation, and repository/unit-of-work patterns.</li>
+                <li>Implemented PostgreSQL persistence with Entity Framework Core migrations, relational domain modeling, and seed data.</li>
+                <li>Added JWT authentication, refresh tokens, Google login, role-based authorization, and protected admin endpoints.</li>
+                <li>Integrated Stripe payments, webhook handling, order status workflows, and Hangfire background processing.</li>
+                <li>Built the React + TypeScript frontend with Vite, React Router, TanStack Query, and reusable admin/storefront components.</li>
+                <li>Deployed with Docker Compose on AWS EC2 and integrated AWS S3 with CDN-backed media delivery.</li>
+              </ul>
+              <div class="tag-list">
+                <span>.NET 10</span>
+                <span>ASP.NET Core</span>
+                <span>EF Core</span>
+                <span>PostgreSQL</span>
+                <span>React</span>
+                <span>TypeScript</span>
+                <span>Docker</span>
+                <span>AWS</span>
+              </div>
+              <div class="project-links">
+                <a class="btn-link" href="catmusicshop-docs.html"><i class="fa-solid fa-book-open"></i> Docs Hub</a>
+                <a class="btn-link" href="catmusicshop-overview.html"><i class="fa-solid fa-list-check"></i> Overview</a>
+                <a class="btn-link" href="catmusicshop-erd.html"><i class="fa-solid fa-diagram-project"></i> ERD</a>
+                <a class="btn-link" href="catmusicshop-api.html"><i class="fa-solid fa-code"></i> API</a>
+              </div>
+            </div>
+            <div class="architecture-panel">
+              <div>
+                <span class="panel-label">Backend</span>
+                <strong>Clean Architecture API</strong>
+                <p>Domain-driven application layers, validation pipeline, auth, payments, background jobs.</p>
+              </div>
+              <div>
+                <span class="panel-label">Frontend</span>
+                <strong>React Storefront + Admin</strong>
+                <p>Typed UI, routed workflows, query caching, reusable product and order management screens.</p>
+              </div>
+              <div>
+                <span class="panel-label">Platform</span>
+                <strong>Docker + AWS</strong>
+                <p>EC2 deployment, PostgreSQL services, S3 media storage, CDN-backed catalog assets.</p>
+              </div>
+            </div>
+          </article>
+
           <!-- Interactive 3D Portfolio Project -->
           <article id="portfolio-3d" class="project-card">
             <div class="project-content">
-              <h3 class="project-title">Interactive 3D Portfolio - Web Experience</h3>
+              <p class="project-kicker">Web Experience</p>
+              <h3 class="project-title">Interactive 3D Portfolio</h3>
               <p>
-                A lightweight (20MB) web-based 3D portfolio where players navigate a virtual world to explore Trinh Quy's personal background, technical skills, personal interests, and career goals.
+                A lightweight web-based 3D portfolio where visitors navigate a virtual world to explore my background,
+                technical skills, interests, and career goals.
               </p>
-              <p class="tech-stack" style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
-                <strong>Technologies:</strong> WebGPU, Compute/HLSL Shaders, DOTS<br>
+              <p class="tech-stack">
+                <strong>Technologies:</strong> WebGPU, Compute/HLSL Shaders<br>
                 <strong>Duration:</strong> January 2026 - February 2026
               </p>
-                <a target="_blank" class="btn-link" href="https://trinhquy.pages.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visit</a>
+              <a target="_blank" class="btn-link" href="https://trinhquy.pages.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visit</a>
             </div>
             <div class="project-media-grid">
               <video class="portrait-frame" autoplay loop muted playsinline>
@@ -102,7 +167,7 @@
               <p>
                 An AR app that lets you place a vinyl shop in your real environment, manipulate virtual records (rotate, zoom, swipe, spatial audio), and select “Bohemian Rhapsody” to open a portal into a Live Aid ’85 concert scene.
               </p>
-              <p class="tech-stack" style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+              <p class="tech-stack">
                 <strong>Technologies:</strong> Unity, ARFoundation, Google Cloud Anchors, RESTful API<br>
                 <strong>Duration:</strong> March 2025 - May 2025
               </p>
@@ -134,7 +199,7 @@
               <p>
                 Bermudos is my most heartfelt passion project—a solo ARPG where you play Ryu, exploring a legendary island rumored to grant any wish.
               </p>
-              <p class="tech-stack" style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+              <p class="tech-stack">
                 <strong>Technologies:</strong> Unity, Behaviour Tree, Curve, Animation<br>
                 <strong>Duration:</strong> May 2024 - November 2024
               </p>
@@ -164,7 +229,7 @@
               <p>
                 A 3D mobile game using Rayfire for partial destruction. Features Idle and Arcade mechanics with deep engagement.
               </p>
-              <p class="tech-stack" style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+              <p class="tech-stack">
                 <strong>Technologies:</strong> Unity, Rayfire, Mobile Optimization<br>
                 <strong>Duration:</strong> 2024
               </p>
@@ -196,6 +261,83 @@
             <p>A Firebase-powered quiz game with real-time data sync.</p>
             <a target="_blank" class="btn-mini" href="https://github.com/QuyGDb/QuizGame">Source</a>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="experience" class="experience-section">
+      <div class="content-container">
+        <h2 class="section-heading">Experience</h2>
+        <div class="timeline">
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <strong>Optimizer Viet Nam</strong>
+              <span>Mar 2025 - Dec 2025</span>
+            </div>
+            <div>
+              <h3>Software Engineer (C#, Unity)</h3>
+              <ul>
+                <li>Refactored core PlayerController and camera systems, replacing legacy animation flow with custom Blend Trees, Cinemachine 3, and state machines.</li>
+                <li>Developed a scalable input system for PC and mobile touch controls using action maps and hardware abstraction.</li>
+                <li>Reduced heavy instantiation overhead in rooms with thousands of objects by implementing a Hybrid DOTS architecture.</li>
+                <li>Proposed a shared JSON field-mapping contract to compress bulk network payloads and reduce redundant data transmission.</li>
+                <li>Designed a 3D asset caching pipeline from TriLib to GLB to glTFast for near-instant repeated asset loading on mobile.</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <strong>EZ Games</strong>
+              <span>Jan 2025</span>
+            </div>
+            <div>
+              <h3>Intern Software Engineer (C#, Unity)</h3>
+              <ul>
+                <li>Researched top mobile games with AppMagic to identify market trends and game concepts.</li>
+                <li>Translated findings into core gameplay loops, mechanics, and playable Unity prototypes.</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills" class="skills-section">
+      <div class="content-container">
+        <h2 class="section-heading">Skills</h2>
+        <div class="skills-grid">
+          <div class="skill-group">
+            <h3>Languages</h3>
+            <p>C#, TypeScript, HTML, CSS</p>
+          </div>
+          <div class="skill-group">
+            <h3>Backend</h3>
+            <p>.NET 10, ASP.NET Core Web API, Entity Framework Core, REST API Design, Swagger/OpenAPI</p>
+          </div>
+          <div class="skill-group">
+            <h3>Frontend</h3>
+            <p>React, Vite, React Router, TanStack Query, Three.js</p>
+          </div>
+          <div class="skill-group">
+            <h3>Database</h3>
+            <p>PostgreSQL, relational modeling, EF Core migrations</p>
+          </div>
+          <div class="skill-group">
+            <h3>Cloud / DevOps</h3>
+            <p>Docker, AWS EC2, AWS S3, CDN-backed media delivery</p>
+          </div>
+          <div class="skill-group">
+            <h3>Principles</h3>
+            <p>OOP, SOLID, Clean Architecture, reusable AI-assisted workflows, documentation, research</p>
+          </div>
+        </div>
+
+        <div class="education-card">
+          <h3>Education</h3>
+          <p><strong>Academy of Cryptography Techniques</strong></p>
+          <p>Bachelor's Degree, Software Technology - 2021-2025</p>
+          <p>Grade: 3.2</p>
         </div>
       </div>
     </section>

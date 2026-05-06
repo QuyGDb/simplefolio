@@ -1,4 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Active Nav Highlight on Scroll ---
+  const sections = document.querySelectorAll("section[id]");
+  const navItems = document.querySelectorAll(".nav-item");
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          navItems.forEach((item) => item.classList.remove("active"));
+          const active = document.querySelector(`.nav-item[href="#${entry.target.id}"]`);
+          if (active) active.classList.add("active");
+        }
+      });
+    },
+    { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
+  );
+
+  sections.forEach((section) => observer.observe(section));
+
   // --- Initialize ScrollReveal ---
   if (typeof ScrollReveal !== "undefined") {
     const defaultProps = {
@@ -19,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       },
       {
-        element: ".hero-title",
+        element: ".hero-title-new",
         animation: {
           delay: 500,
           origin: window.innerWidth > 768 ? "left" : "bottom",
